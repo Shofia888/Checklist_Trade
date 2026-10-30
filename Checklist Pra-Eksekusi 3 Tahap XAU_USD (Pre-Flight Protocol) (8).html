@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Flight Execution Protocol — XAU/USD (FundedNext $5K)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#131c2e',
+                            950: '#070b14',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070b14;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(245, 158, 11, 0.07), transparent 30%),
+                radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.06), transparent 30%);
+        }
+        .glass-panel {
+            background: rgba(19, 28, 46, 0.82);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .gold-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+        }
+        .check-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .check-card:hover {
+            border-color: rgba(251, 191, 36, 0.35);
+            background: rgba(30, 41, 59, 0.65);
+        }
+        .check-card.checked-state {
+            background: rgba(6, 78, 59, 0.22);
+            border-color: rgba(16, 185, 129, 0.45);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-amber-500 selection:text-slate-950 pb-16">
+
+    <!-- Top Header & Account Telemetry -->
+    <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl gold-badge flex items-center justify-center text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20">
+                    PF
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-white text-sm sm:text-base tracking-tight">PRE-FLIGHT EXECUTION PROTOCOL</h1>
+                        <span class="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 rounded-full">XAU/USD • $5.000</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Gerbang Verifikasi 3 Tahap & Filter Anti-Kebocoran Modal FundedNext</p>
+                </div>
+            </div>
+
+            <!-- Live Progress & Reset Controls -->
+            <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+                <button onclick="toggleSheetsModal()" class="px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 text-xs font-semibold border border-emerald-500/40 transition flex items-center gap-1.5">
+                    <span id="sheetsStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="sheetsBtnLabel">Hubungkan Google Sheets</span>
+                </button>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                    <span class="text-[11px] text-slate-400 font-mono">SKOR VERIFIKASI:</span>
+                    <span id="topScoreText" class="text-xs sm:text-sm font-mono font-extrabold text-rose-400">0 / 12</span>
+                </div>
+                <button onclick="resetAllProtocol()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>Reset Form</span>
+                </button>
+            </div>
+        </div>
+        <!-- Progress Bar Line -->
+        <div class="w-full h-1 bg-slate-900 overflow-hidden">
+            <div id="topProgressBar" class="h-full bg-rose-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <!-- GOOGLE SHEETS INTEGRATION MODAL -->
+    <div id="sheetsConfigModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl max-w-3xl w-full p-5 sm:p-6 border border-slate-700 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">INTEGRASI OTOMATIS GOOGLE SHEETS</span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-white mt-1">Hubungkan HTML ke Sheet 'Data Trading' & 'Note'</h3>
+                </div>
+                <button onclick="toggleSheetsModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono">✕ Tutup</button>
+            </div>
+
+            <!-- Step 1: Webhook Input -->
+            <div class="space-y-2 bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                <label class="text-xs font-mono uppercase text-amber-400 font-bold block">Langkah 1: Tempel URL Web App Google Apps Script Anda</label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="webhookUrlInput" type="url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400">
+                    <button onclick="saveWebhookUrl()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition shrink-0">
+                        Simpan Koneksi
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <span id="webhookSaveFeedback" class="text-[11px] font-mono text-slate-400">Status: Belum ada URL Web App yang disimpan.</span>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-mono text-slate-300">Hasil Default ke Sheet:</label>
+                        <select id="defaultOutcomeSelect" class="bg-slate-950 border border-slate-700 text-[11px] text-white rounded-lg px-2 py-1 font-mono">
+                            <option value="OPEN">OPEN (Diisi TP/SL Nanti)</option>
+                            <option value="TP">TP (Win = 1)</option>
+                            <option value="SL">SL (Win = 0)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Copy-Paste Apps Script Code -->
+            <div class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono uppercase text-cyan-400 font-bold">Langkah 2: Panduan Super Detail (Klik demi Klik di Layar Anda)</span>
+                    <button onclick="copyAppsScriptCode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-mono font-bold border border-slate-700 transition">
+                        <span id="copyScriptBtnText">Salin Kode Apps Script</span>
+                    </button>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 space-y-2 leading-relaxed">
+                    <p><strong class="text-amber-400">TAHAP A — TEMPEL &amp; SIMPAN KODE:</strong></p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300">
+                        <li>Klik tombol <strong>"Salin Kode Apps Script"</strong> di kanan atas kotak ini.</li>
+                        <li>Buka tab <strong>Apps Script (Untitled project)</strong> Anda, klik di area putih kosong di sebelah angka <code>1</code>, lalu tekan <strong>Ctrl + V</strong> (atau tahan layar lalu pilih <em>Tempel/Paste</em> jika di HP/Tablet).</li>
+                        <li>Lihat deretan ikon di bagian atas (di sebelah kiri tulisan <em>"▷ Jalankan"</em>), klik ikon <strong>Disket (💾 Simpan project ke Drive)</strong>. Tunggu sampai tulisan <em>"Perubahan belum disimpan"</em> di atas hilang.</li>
+                    </ol>
+
+                    <p class="pt-2"><strong class="text-emerald-400">TAHAP B — TERAPKAN (DEPLOY) MENJADI WEB APP:</strong></p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300" start="4">
+                        <li>Klik tombol biru <strong>"Terapkan"</strong> di pojok kanan atas layar &rarr; pilih <strong>"Deployment baru"</strong>.</li>
+                        <li>Akan muncul jendela kecil. Di sebelah kiri tulisan <em>"Pilih jenis"</em>, klik ikon <strong>Roda Gigi (⚙️)</strong> &rarr; lalu klik <strong>"Aplikasi web"</strong>.</li>
+                        <li>Biarkan kotak <em>Deskripsi</em> kosong, dan biarkan <em>Jalankan sebagai</em> tetap <strong>"Saya (email Anda)"</strong>.</li>
+                        <li>Pada bagian <strong>"Siapa yang memiliki akses"</strong>, klik pilihannya lalu ubah dari <em>"Hanya saya"</em> menjadi <strong>"Siapa saja" (Anyone)</strong>. <em>(Wajib diubah ke "Siapa saja" agar HTML bisa mengirim data!)</em></li>
+                        <li>Klik tombol biru <strong>"Terapkan"</strong> di kanan bawah jendela tersebut.</li>
+                    </ol>
+
+                    <p class="pt-2"><strong class="text-cyan-400">TAHAP C — BERIKAN IZIN AKSES (OTORISASI GOOGLE):</strong></p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300" start="9">
+                        <li>Jika muncul tombol biru <strong>"Izinkan akses" (Authorize access)</strong>, klik tombol tersebut.</li>
+                        <li>Pilih <strong>Akun Google</strong> Anda (pemilik file Google Sheets <em>Trading Jurnal</em>).</li>
+                        <li>Jika muncul layar peringatan <em>"Google belum memverifikasi aplikasi ini"</em>, jangan khawatir (itu karena ini script buatan Anda sendiri):
+                            <ul class="list-disc list-inside pl-4 mt-1 text-amber-300">
+                                <li>Klik tulisan kecil <strong>"Lanjutan" (Advanced)</strong> di kiri bawah.</li>
+                                <li>Klik tulisan <strong>"Buka Untitled project (tidak aman)"</strong> di paling bawah.</li>
+                                <li>Scroll ke bawah lalu klik tombol <strong>"Izinkan" (Allow)</strong>.</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <p class="pt-2"><strong class="text-purple-400">TAHAP D — SALIN URL &amp; TEMPEL KE HTML INI:</strong></p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300" start="12">
+                        <li>Setelah selesai, akan muncul jendela <em>Deployment baru</em> berisi <strong>URL Aplikasi Web</strong> (awalan <code>https://script.google.com/macros/s/.../exec</code>).</li>
+                        <li>Klik tombol <strong>"Salin" (Copy)</strong> di bawah URL tersebut.</li>
+                        <li>Kembali ke halaman HTML ini, tempelkan URL tersebut ke kotak <strong>Langkah 1</strong> di atas, lalu klik <strong>"Simpan Koneksi"</strong>. Selesai!</li>
+                    </ol>
+                </div>
+                <textarea id="appsScriptCodeBox" readonly rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] font-mono text-emerald-300 focus:outline-none leading-relaxed">function doPost(e) {
+  // Otomatis mendeteksi apakah script dipasang di dalam Sheet atau di Proyek Mandiri
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    var files = DriveApp.getFilesByName('Trading Jurnal');
+    if (files.hasNext()) {
+      ss = SpreadsheetApp.open(files.next());
+    }
+  }
+  var data = JSON.parse(e.postData.contents);
+
+  // 1. Masukkan baris baru ke lembar 'Data Trading'
+  var sheetTrade = ss.getSheetByName('Data Trading') || ss.getSheets()[1];
+  var nextRow = 1;
+  var colA = sheetTrade.getRange('A1:A200').getValues();
+  for (var i = 1; i < colA.length; i++) {
+    if (colA[i][0] === 'Skor') break;
+    if (colA[i][0] !== '' && !isNaN(colA[i][0])) {
+      nextRow = i + 2;
+    }
+  }
+  var nextId = nextRow - 1;
+  var winVal = data.outcome === 'TP' ? 1 : (data.outcome === 'SL' ? 0 : '');
+
+  sheetTrade.getRange(nextRow, 1, 1, 12).setValues([[
+    nextId, data.date, data.session, 'XAU/USD',
+    data.cond, data.entry, data.sellScore, data.buyScore,
+    data.geo, data.tech, data.outcome, winVal
+  ]]);
+
+  // 2. Masukkan alasan Makro + Teknikal ke lembar 'Note'
+  var sheetNote = ss.getSheetByName('Note') || ss.getSheets()[2];
+  var colNote = sheetNote.getRange('B1:B100').getValues();
+  var noteRow = 2;
+  for (var j = 1; j < colNote.length; j++) {
+    if (colNote[j][0] !== '') noteRow = j + 2;
+  }
+  sheetNote.getRange(noteRow, 1, 1, 2).setValues([[
+    noteRow - 1,
+    'T.' + nextId + ' (' + data.cond + '+' + data.entry + ' | ' + data.tech + '): ' + data.thesis
+  ]]);
+
+  return ContentService.createTextOutput(JSON.stringify({ status: 'success', tradeId: nextId }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+
+        <!-- Circuit Breaker & Daily Quota Telemetry -->
+        <section class="glass-panel rounded-2xl p-4 sm:p-5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-semibold">SOP 6 & SOP 7 • REM DARURAT FUNDEDNEXT (CIRCUIT BREAKER)</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white">Status Kuota Harian & Mode Risiko Saat Ini</h2>
+                </div>
+
+                <!-- Interactive Circuit Breaker Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- Daily Trade Counter -->
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                        <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Status Hari Ini (Max 2 Trade)</label>
+                        <select id="dailyStatusSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-amber-400">
+                            <option value="trade1">Trade Pertama Hari Ini (0 Trade)</option>
+                            <option value="trade2_after_sl">Trade Kedua (Pasca 1x SL & Jeda >60m)</option>
+                            <option value="trade1_tp">Trade Pertama Sudah TP (+$50)</option>
+                            <option value="max_reached">Sudah 2x Trade Hari Ini</option>
+                        </select>
+                    </div>
+
+                    <!-- Streak Status -->
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                        <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Kondisi Streak Terakhir</label>
+                        <select id="streakStatusSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-amber-400">
+                            <option value="normal">Normal (0–1x SL / 1–2x TP)</option>
+                            <option value="recovery">Pemulihan Pasca 2x SL (Sudah Libur 24 Jam)</option>
+                            <option value="lockout_2sl">Baru Saja Kena 2x SL Beruntun (&lt;24 Jam)</option>
+                            <option value="winstreak">Euforia Win Streak (3x–5x TP Beruntun)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Risk Allocation Box -->
+                    <div id="riskAllocationCard" class="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-2.5 flex flex-col justify-center">
+                        <span class="text-[10px] font-mono uppercase text-emerald-400 block">Risiko Diizinkan & Target</span>
+                        <div class="flex items-baseline justify-between mt-0.5">
+                            <span id="allowedRiskText" class="text-sm font-mono font-extrabold text-white">1,00% ($50)</span>
+                            <span id="allowedTargetText" class="text-[11px] font-mono text-emerald-300">TP: +$50 / +$75</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pre-Flight Parameter Scanner (Auto-Detects Hard Banned List) -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">SIMULATOR PARAMETER SETUP • DETEKTOR OTOMATIS HARD BANNED LIST</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">Pilih Parameter Pasar Saat Ini Sebelum Mencentang Checklist</h2>
+                </div>
+                <span id="setupExpectancyBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto">
+                    Win Rate Historis Setup: 100,0%
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <!-- 1. Sesi -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">1. Sesi Pasar</label>
+                    <select id="paramSession" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-amber-400">
+                        <option value="New York">New York (Valid)</option>
+                        <option value="Asia">Asia (HARD BANNED!)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Sesi Asia WR 0% (Trade #1 SL)</p>
+                </div>
+
+                <!-- 2. Kondisi Pasar & Arah Entry -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">2. Tren & Arah Entry</label>
+                    <select id="paramAlignment" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-amber-400">
+                        <option value="Bull_Buy">Bull + Buy (Searah Tren)</option>
+                        <option value="Bear_Sell">Bear + Sell (Searah Tren)</option>
+                        <option value="Bull_Sell">Bull + Sell (Counter-Trend)</option>
+                        <option value="Bear_Buy">Bear + Buy (Counter-Trend)</option>
+                    </select>
+                    <p id="alignmentHint" class="text-[10px] text-emerald-400">Bull+Buy+LS = 100% WR (11/11 TP)</p>
+                </div>
+
+                <!-- 3. Skor Korelasi Makro -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">3. Skor Makro (DXY/US10Y)</label>
+                    <select id="paramScore" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-amber-400">
+                        <option value="2">Skor 2 (DXY & US10Y Bearish)</option>
+                        <option value="1">Skor 1 (DXY & US10Y Bullish)</option>
+                        <option value="3">Skor 3 (Divergen / Berlawanan)</option>
+                    </select>
+                    <p id="scoreHint" class="text-[10px] text-slate-400">Skor 1 WR 81,8% • Skor 2 WR 73,3%</p>
+                </div>
+
+                <!-- 4. Katalis Geopolitik / News -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">4. Katalis Fundamental</label>
+                    <select id="paramGeo" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-amber-400">
+                        <option value="Nothing">Nothing (Pasar Normal)</option>
+                        <option value="NEWS_WAIT">NEWS (Sudah Tunggu &gt;30m)</option>
+                        <option value="NEWS_NOW">NEWS (&lt;30 Menit / Baru Rilis!)</option>
+                        <option value="WAR">WAR (Eskalasi Konflik)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Normal WR 71% • News &lt;30m Banned</p>
+                </div>
+
+                <!-- 5. Pemicu Teknikal -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">5. Konfirmasi Teknikal</label>
+                    <select id="paramTech" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-emerald-400 rounded-lg px-2.5 py-2 font-bold focus:outline-none focus:border-amber-400">
+                        <option value="LS">LS (Liquidity Sweep Valid)</option>
+                        <option value="MSS">MSS Murni (HARD BANNED!)</option>
+                        <option value="NOTHING">NOTHING / FOMO (HARD BANNED!)</option>
+                    </select>
+                    <p class="text-[10px] text-emerald-400">LS WR 85,7% (PF 6,00) • NOTHING 0%</p>
+                </div>
+            </div>
+
+            <!-- Dynamic Hard-Ban Warning Banner -->
+            <div id="hardBanAlert" class="hidden p-4 rounded-xl bg-rose-950/40 border-2 border-rose-500/70 text-rose-200 space-y-1.5">
+                <div class="flex items-center gap-2 text-rose-400 font-mono font-extrabold text-xs sm:text-sm uppercase">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <span>PELANGGARAN DAFTAR LARANGAN MUTLAK (HARD BANNED DETECTED!)</span>
+                </div>
+                <ul id="hardBanList" class="text-xs space-y-1 list-disc list-inside text-rose-100 font-medium">
+                    <!-- Populated dynamically by JS -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- 3-STAGE PRE-FLIGHT CHECKLIST -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            <!-- TAHAP 1: LINGKUNGAN MAKRO & WAKTU -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">GERBANG 1</span>
+                            <h3 class="text-base font-bold text-white mt-1">Filter Lingkungan Makro & Waktu</h3>
+                        </div>
+                        <span id="stage1Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 1.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">1.1 Eksekusi di Sesi New York</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Bukan Sesi Asia. Likuiditas institusional XAU/USD berada pada sesi New York.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 1.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">1.2 Aturan Jeda 30 Menit Pasca NEWS</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Tidak ada rilis berita *High-Impact* (CPI, NFP, PMI, FOMC) dalam 30 menit ke depan, atau **sudah menunggu &gt;30 menit** pasca rilis.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 1.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">1.3 Validasi Skor Korelasi DXY & US10Y</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Prioritas **Skor 1** (DXY & Yield naik &rarr; *Sell*) atau **Skor 2** (DXY & Yield turun &rarr; *Buy*). Jika **Skor 3**, dilarang transaksi di pasar *Bearish* kecuali di ekstrem $\pm 2\text{ SD}$ + DXY tertahan di 100.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Win Rate Skor 1 & 2:</span>
+                    <span class="text-emerald-400 font-bold">76,92% (+$700)</span>
+                </div>
+            </div>
+
+            <!-- TAHAP 2: KONFIRMASI STRUKTUR & TEKNIKAL -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">GERBANG 2</span>
+                            <h3 class="text-base font-bold text-white mt-1">Konfirmasi Struktur & Teknikal</h3>
+                        </div>
+                        <span id="stage2Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 2.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">2.1 Keselarasan Tren / Syarat Ekstrem 2 SD</span>
+                                    <p id="check21DynamicText" class="text-[11px] text-slate-300 leading-relaxed">Searah tren utama (`Bull+Buy` / `Bear+Sell`). Jika *Counter-Trend*, wajib berada di area ekstrem **$\pm 2$ Standar Deviasi (2 SD)** atau deviasi $&gt;0,5\%$ dari 200w SMA + dukungan suku bunga/obligasi.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 2.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-emerald-400 block">2.2 Pemicu Wajib: Liquidity Sweep (LS)</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Harga telah menyapu *high/low* likuiditas sebelumnya, gagal menembus (*failed breakout*), dan **menutup kembali di dalam rentang harga**. (Bukan `MSS` murni & bukan `NOTHING`!).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 2.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">2.3 Ruang Target RR 1:1 / 1:1,5 ke SD 0</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Tersedia ruang *Risk-to-Reward* minimal **1:1** (atau **1:1,5** dari ekstrem 2 SD) menuju titik ekuilibrium (**SD 0**) tanpa terhalang *support/resistance* mayor.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Profit Factor Setup LS:</span>
+                    <span class="text-emerald-400 font-bold">6,00 (WR 85,71%)</span>
+                </div>
+            </div>
+
+            <!-- TAHAP 3: VALIDASI PSIKOLOGIS & RISIKO -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">GERBANG 3</span>
+                            <h3 class="text-base font-bold text-white mt-1">Validasi Psikologis & Risiko</h3>
+                        </div>
+                        <span id="stage3Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 3.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">3.1 Penutupan Candle Sempurna (Anti-FOMO)</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Saya sudah menunggu *candle* konfirmasi tutup sempurna dan tidak masuk terburu-buru saat *candle* masih berjalan (*"Terburu-buru adalah keputusan terburuk"* — Note #2).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 3.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">3.2 Bebas Emosi Balas Dendam & Euforia</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Saya tenang, tidak sedang mengejar kekalahan sebelumnya (*revenge trading*), dan tidak lengah karena euforia kemenangan beruntun (ingat kasus Trade #42–#44).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 3.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-cyan-400 block">3.3 Lot & Risiko Terkunci Sesuai Kuota</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Ukuran lot di MT4/MT5/cTrader sudah dihitung agar *Stop Loss* tepat berisiko **1,00% ($50)** pada mode normal, atau **0,50% ($25)** pada mode pemulihan pasca 2x SL.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Batas Aman Harian:</span>
+                    <span class="text-cyan-400 font-bold">Max -$100 (Batas DD -$250)</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SOP 8: FINAL 10-SECOND GATE & MANDATORY JOURNAL NOTE BUILDER -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-semibold">SOP 8 • TIGA PERTANYAAN TERAKHIR (10 DETIK) & JURNAL WAJIB</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">Konfirmasi Kejujuran Eksekusi & Penulisan Tesis Lembar 'Note'</h2>
+                </div>
+                <span id="stage4Badge" class="text-xs font-mono font-bold text-slate-400">0/3 Terverifikasi</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <!-- Left 5 Cols: 3 Final Questions -->
+                <div class="lg:col-span-5 space-y-3">
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 1 (Validasi LS):</strong>
+                                Apakah benar-benar ada <strong>Liquidity Sweep (LS)</strong> yang sudah <em>close</em>? <em>(Jika hanya mengira-ngira = BATALKAN)</em>
+                            </span>
+                        </div>
+                    </label>
+
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 2 (Validasi Kesabaran & 2 SD):</strong>
+                                Apakah saya masuk karena sabar menunggu di area ekstrem / <strong>2 SD</strong>, bukan karena takut ketinggalan harga (FOMO)?
+                            </span>
+                        </div>
+                    </label>
+
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" id="chkJournalWritten" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 3 (Wajib Tulis Jurnal Dulu):</strong>
+                                Saya sudah menulis minimal 1 kalimat alasan <strong>Makro + Teknikal (LS & SD)</strong> di kotak sebelah kanan sebelum menekan tombol order.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Right 7 Cols: Pre-Trade Thesis Input & One-Click Copy -->
+                <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="journalThesisInput" class="text-xs font-mono uppercase text-amber-400 font-bold">Generator Catatan Jurnal Pra-Eksekusi (Lembar 'Note')</label>
+                            <button onclick="fillTemplateThesis()" class="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline">
+                                + Isi Template Otomatis
+                            </button>
+                        </div>
+                        <textarea id="journalThesisInput" rows="4" oninput="handleThesisInput()" placeholder="Contoh (Standar Trade #45–#46): T.47 Buy di KP Bull (Skor 2) karena DXY & US10Y melemah pasca data PMI, harga melakukan Liquidity Sweep (LS) di area 2 SD dan gagal menembus support bawah dengan target mean reversion ke SD 0..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <span id="charCountInfo" class="text-[11px] font-mono text-slate-400">Minimal 20 karakter untuk membuka kunci eksekusi</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="copySheetRowTsv()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5" title="Salin seluruh baris untuk ditempel langsung ke lembar Data Trading">
+                                <span id="copyRowBtnText">Salin Baris Data Trading</span>
+                            </button>
+                            <button onclick="copyJournalNote()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                                <span id="copyBtnText">Salin Catatan Note</span>
+                            </button>
+                            <button onclick="logVerifiedTrade()" id="btnLogTrade" disabled class="px-4 py-2 rounded-xl bg-emerald-600/30 text-emerald-300/50 border border-emerald-500/20 text-xs font-bold transition cursor-not-allowed">
+                                Simpan &amp; Kirim ke Google Sheets
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MASTER EXECUTION VERDICT BANNER -->
+        <section id="masterVerdictBox" class="p-6 rounded-2xl bg-rose-950/35 border-2 border-rose-500/50 transition-all duration-300">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span id="verdictDot" class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+                        <span id="verdictLabel" class="text-xs font-mono uppercase tracking-wider font-extrabold text-rose-400">KEPUTUSAN PROTOKOL INSTITUSIONAL</span>
+                    </div>
+                    <h2 id="verdictTitle" class="text-xl sm:text-2xl font-extrabold text-white">DILARANG KLIK ORDER — SYARAT BELUM LENGKAP</h2>
+                    <p id="verdictSubtext" class="text-xs sm:text-sm text-slate-300">Lengkapi seluruh 12 poin verifikasi (Tahap 1–3 & SOP 8) serta pastikan tidak ada pelanggaran Hard Banned List.</p>
+                </div>
+
+                <div class="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+                    <div id="verdictPill" class="px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 tracking-tight">
+                        NO TRADE (0/12)
+                    </div>
+                    <span id="verdictEvText" class="text-[11px] font-mono text-slate-400">Expected Value Setup LS: +$35,71 / Trade</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SESSION PRE-FLIGHT LOG (Tracks checked setups during the day) -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">RIWAYAT VERIFIKASI HARI INI</span>
+                    <h3 class="text-sm sm:text-base font-bold text-white">Log Pre-Flight Sesi Berjalan (Tersimpan di Browser)</h3>
+                </div>
+                <button onclick="clearSessionLogs()" class="text-xs font-mono text-slate-400 hover:text-rose-400 transition">Hapus Riwayat</button>
+            </div>
+
+            <div id="sessionLogContainer" class="space-y-2.5 text-xs">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const setupStatsLookup = {
+            'Bull_Buy_LS': { wr: '100,0%', detail: '11 TP / 0 SL (+$550) • A+ Setup Terbaik', tier: 'emerald' },
+            'Bear_Sell_LS': { wr: '83,3%', detail: '5 TP / 1 SL (+$200) • Setup Trend-Following Kuat', tier: 'emerald' },
+            'Bull_Sell_LS': { wr: '75,0%', detail: '6 TP / 2 SL (+$200) • Wajib di 2 SD & Yield Naik', tier: 'cyan' },
+            'Bear_Buy_LS': { wr: '66,7%', detail: '2 TP / 1 SL (+$50) • Hati-hati! Wajib 2 SD & DXY < 100', tier: 'amber' }
+        };
+
+        function handleThesisInput() {
+            const text = document.getElementById('journalThesisInput').value.trim();
+            const charInfo = document.getElementById('charCountInfo');
+            const chkWritten = document.getElementById('chkJournalWritten');
+
+            if (text.length >= 20) {
+                charInfo.textContent = `✓ Panjang catatan valid (${text.length} karakter)`;
+                charInfo.className = 'text-[11px] font-mono text-emerald-400';
+                chkWritten.checked = true;
+            } else {
+                charInfo.textContent = `Minimal 20 karakter (${text.length}/20 karakter)`;
+                charInfo.className = 'text-[11px] font-mono text-amber-400';
+                chkWritten.checked = false;
+            }
+            evaluateProtocol();
+        }
+
+        function fillTemplateThesis() {
+            const session = document.getElementById('paramSession').value;
+            const align = document.getElementById('paramAlignment').value;
+            const score = document.getElementById('paramScore').value;
+            const geo = document.getElementById('paramGeo').value;
+            const tech = document.getElementById('paramTech').value;
+
+            const [cond, entry] = align.split('_');
+            const geoLabel = geo === 'Nothing' ? 'kondisi pasar normal' : geo === 'NEWS_WAIT' ? 'pasca rilis NEWS (>30m)' : geo;
+
+            const template = `Sesi ${session} | KP ${cond} + Entry ${entry} (Skor Makro ${score}, ${geoLabel}): Harga gagal menembus batas support/resistance di area ekstrem 2 SD dan membentuk konfirmasi ${tech} (Liquidity Sweep) yang sudah close, didukung ekspektasi imbal hasil US10Y/DXY dengan target mean reversion menuju SD 0.`;
+            document.getElementById('journalThesisInput').value = template;
+            handleThesisInput();
+        }
+
+        function evaluateProtocol() {
+            document.querySelectorAll('.pf-check').forEach(chk => {
+                const card = chk.closest('.check-card');
+                if (card) {
+                    if (chk.checked) card.classList.add('checked-state');
+                    else card.classList.remove('checked-state');
+                }
+            });
+
+            const dailyStatus = document.getElementById('dailyStatusSelect').value;
+            const streakStatus = document.getElementById('streakStatusSelect').value;
+            const session = document.getElementById('paramSession').value;
+            const align = document.getElementById('paramAlignment').value;
+            const score = document.getElementById('paramScore').value;
+            const geo = document.getElementById('paramGeo').value;
+            const tech = document.getElementById('paramTech').value;
+
+            const riskCard = document.getElementById('riskAllocationCard');
+            const allowedRiskText = document.getElementById('allowedRiskText');
+            const allowedTargetText = document.getElementById('allowedTargetText');
+
+            if (streakStatus === 'recovery') {
+                riskCard.className = 'bg-amber-950/30 border border-amber-500/40 rounded-xl p-2.5 flex flex-col justify-center';
+                allowedRiskText.textContent = '0,50% ($25) [MODE PEMULIHAN]';
+                allowedTargetText.textContent = 'TP: +$25 / +$37,5';
+            } else if (streakStatus === 'lockout_2sl' || dailyStatus === 'trade1_tp' || dailyStatus === 'max_reached') {
+                riskCard.className = 'bg-rose-950/30 border border-rose-500/40 rounded-xl p-2.5 flex flex-col justify-center';
+                allowedRiskText.textContent = '0,00% ($0) [LOCKOUT]';
+                allowedTargetText.textContent = 'WAJIB BERHENTI';
+            } else {
+                riskCard.className = 'bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-2.5 flex flex-col justify-center';
+                allowedRiskText.textContent = '1,00% ($50) [NORMAL]';
+                allowedTargetText.textContent = 'TP: +$50 (1:1) / +$75 (1:1,5)';
+            }
+
+            const alignHint = document.getElementById('alignmentHint');
+            const check21Text = document.getElementById('check21DynamicText');
+            if (align === 'Bull_Buy') {
+                alignHint.textContent = 'Bull+Buy+LS = 100% WR (11 TP, 0 SL)';
+                alignHint.className = 'text-[10px] text-emerald-400';
+                check21Text.innerHTML = 'Transaksi <strong>Searah Tren (Bull + Buy)</strong>. Pastikan harga tidak membeli di pucuk resistensi sebelum sweep.';
+            } else if (align === 'Bear_Sell') {
+                alignHint.textContent = 'Bear+Sell+LS = 83,3% WR (5 TP, 1 SL)';
+                alignHint.className = 'text-[10px] text-emerald-400';
+                check21Text.innerHTML = 'Transaksi <strong>Searah Tren (Bear + Sell)</strong>. Pastikan konfirmasi LS sudah selesai menyapu likuiditas atas.';
+            } else {
+                alignHint.textContent = 'Counter-Trend: Wajib 2 SD + Alasan Makro Kuat!';
+                alignHint.className = 'text-[10px] text-amber-400 font-semibold';
+                check21Text.innerHTML = '<span class="text-amber-300 font-semibold">PERHATIAN COUNTER-TREND:</span> Wajib memenuhi 3 syarat: (1) Konfirmasi LS di ujung harga, (2) Berada di ekstrem <strong>±2 Standar Deviasi (2 SD)</strong> / deviasi &gt;0,5% 200w SMA, dan (3) Didukung katalis imbal hasil US10Y/Fed/DXY.';
+            }
+
+            const expBadge = document.getElementById('setupExpectancyBadge');
+            const key = `${align}_${tech}`;
+            if (tech === 'NOTHING') {
+                expBadge.textContent = 'Win Rate Historis NOTHING: 0,0% (0 TP / 9 SL • -$450)';
+                expBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 self-start sm:self-auto';
+            } else if (tech === 'MSS') {
+                expBadge.textContent = 'Win Rate Historis MSS: 44,4% (PF 0,80 • Bencana)';
+                expBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 self-start sm:self-auto';
+            } else if (setupStatsLookup[key]) {
+                const st = setupStatsLookup[key];
+                expBadge.textContent = `Rekam Jejak ${align.replace('_', '+')}+LS: WR ${st.wr} (${st.detail})`;
+                expBadge.className = `px-3 py-1 rounded-full text-xs font-mono font-bold bg-${st.tier}-500/15 text-${st.tier}-300 border border-${st.tier}-500/30 self-start sm:self-auto`;
+            }
+
+            const violations = [];
+            if (dailyStatus === 'trade1_tp') {
+                violations.push('SOP 7 (Lock the Green Day): Transaksi pertama hari ini sudah TP (+$50). Wajib berhenti trading hari ini untuk mengunci profit.');
+            }
+            if (dailyStatus === 'max_reached') {
+                violations.push('SOP 7 (Kuota Harian): Anda sudah mencapai batas maksimal 2 transaksi hari ini. Tutup platform untuk melindungi Daily Drawdown 5%.');
+            }
+            if (streakStatus === 'lockout_2sl') {
+                violations.push('SOP 7 (Circuit Breaker 2x SL): Anda baru saja mengalami 2x SL beruntun (-$100). Wajib libur 24 jam penuh agar tidak memicu Cluster Losing Streak ke-3!');
+            }
+            if (session === 'Asia') {
+                violations.push('SOP 1 & BANNED #5 (Sesi Asia): Dilarang transaksi di Sesi Asia (Rekam jejak Trade #1: SL). Wajib tunggu Sesi New York.');
+            }
+            if (tech === 'NOTHING') {
+                violations.push('SOP 2 & BANNED #1 (Entry NOTHING): Masuk tanpa konfirmasi teknikal memiliki Win Rate 0,00% (9 SL beruntun, rugi -$450).');
+            }
+            if (tech === 'MSS') {
+                violations.push('SOP 2 & BANNED #2 (Entry MSS Murni): Masuk hanya mengandalkan Market Structure Shift tanpa Liquidity Sweep memiliki Win Rate 44,4% ("MSS adalah bencana").');
+            }
+            if ((align === 'Bear_Sell' || align === 'Bear_Buy') && score === '3') {
+                violations.push('SOP 2 & BANNED #3 (Bear + Skor Makro 3): Saat tren Bearish dan DXY vs US10Y divergen (Skor 3), Win Rate historis Anda hanya 11,11% (1 TP, 8 SL, rugi -$350).');
+            }
+            if (align === 'Bear_Buy' && (geo === 'NEWS_WAIT' || geo === 'NEWS_NOW' || geo === 'WAR')) {
+                violations.push('SOP 2 & BANNED #4 (Bear + Buy Saat NEWS/WAR): Dilarang menangkap pisau jatuh (Buy di tren Bearish) saat ada rilis berita atau eskalasi perang (Win Rate 0%).');
+            }
+            if (geo === 'NEWS_NOW') {
+                violations.push('SOP 1 & BANNED #5 (Rilis Berita <30 Menit): Wajib tunggu minimal 30 menit pasca rilis berita High-Impact sebelum mencari setup Liquidity Sweep.');
+            }
+
+            const banAlert = document.getElementById('hardBanAlert');
+            const banList = document.getElementById('hardBanList');
+            if (violations.length > 0) {
+                banAlert.classList.remove('hidden');
+                banList.innerHTML = violations.map(v => `<li>${v}</li>`).join('');
+            } else {
+                banAlert.classList.add('hidden');
+                banList.innerHTML = '';
+            }
+
+            const s1 = document.querySelectorAll('.stage-1:checked').length;
+            const s2 = document.querySelectorAll('.stage-2:checked').length;
+            const s3 = document.querySelectorAll('.stage-3:checked').length;
+            const s4 = document.querySelectorAll('.stage-4:checked').length;
+            const totalChecked = s1 + s2 + s3 + s4;
+            const totalBoxes = 12;
+
+            document.getElementById('stage1Badge').textContent = `${s1}/3`;
+            document.getElementById('stage1Badge').className = `text-xs font-mono font-bold ${s1 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage2Badge').textContent = `${s2}/3`;
+            document.getElementById('stage2Badge').className = `text-xs font-mono font-bold ${s2 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage3Badge').textContent = `${s3}/3`;
+            document.getElementById('stage3Badge').className = `text-xs font-mono font-bold ${s3 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage4Badge').textContent = `${s4}/3 Terverifikasi`;
+            document.getElementById('stage4Badge').className = `text-xs font-mono font-bold ${s4 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            const pct = Math.round((totalChecked / totalBoxes) * 100);
+            const topScoreText = document.getElementById('topScoreText');
+            const topProgressBar = document.getElementById('topProgressBar');
+            topScoreText.textContent = `${totalChecked} / ${totalBoxes}`;
+
+            const verdictBox = document.getElementById('masterVerdictBox');
+            const verdictDot = document.getElementById('verdictDot');
+            const verdictLabel = document.getElementById('verdictLabel');
+            const verdictTitle = document.getElementById('verdictTitle');
+            const verdictSubtext = document.getElementById('verdictSubtext');
+            const verdictPill = document.getElementById('verdictPill');
+            const btnLog = document.getElementById('btnLogTrade');
+
+            const isCleanAndComplete = (violations.length === 0) && (totalChecked === totalBoxes);
+
+            if (isCleanAndComplete) {
+                topScoreText.className = 'text-xs sm:text-sm font-mono font-extrabold text-emerald-400';
+                topProgressBar.className = 'h-full bg-emerald-400 transition-all duration-300';
+                topProgressBar.style.width = '100%';
+
+                verdictBox.className = 'p-6 rounded-2xl bg-emerald-950/35 border-2 border-emerald-400/70 transition-all duration-300 shadow-lg shadow-emerald-500/10';
+                verdictDot.className = 'w-3 h-3 rounded-full bg-emerald-400 animate-ping';
+                verdictLabel.className = 'text-xs font-mono uppercase tracking-wider font-extrabold text-emerald-400';
+                verdictLabel.textContent = 'VERIFIKASI 12 POIN LULUS • ZERO HARD-BAN VIOLATION';
+                verdictTitle.textContent = 'CLEAR TO EXECUTE — DIIZINKAN ENTRY SEKARANG';
+                verdictSubtext.textContent = 'Seluruh syarat Makro, Liquidity Sweep (LS), Standar Deviasi, dan Psikologis terpenuhi. Eksekusi sesuai lot yang telah dikunci.';
+                verdictPill.className = 'px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-emerald-500 text-slate-950 border border-emerald-300 tracking-tight shadow-md';
+                verdictPill.textContent = 'EXECUTE (12/12)';
+
+                btnLog.disabled = false;
+                btnLog.className = 'px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition cursor-pointer shadow';
+            } else {
+                topScoreText.className = violations.length > 0 ? 'text-xs sm:text-sm font-mono font-extrabold text-rose-400' : 'text-xs sm:text-sm font-mono font-extrabold text-amber-400';
+                topProgressBar.className = violations.length > 0 ? 'h-full bg-rose-500 transition-all duration-300' : 'h-full bg-amber-400 transition-all duration-300';
+                topProgressBar.style.width = `${pct}%`;
+
+                verdictBox.className = 'p-6 rounded-2xl bg-rose-950/35 border-2 border-rose-500/50 transition-all duration-300';
+                verdictDot.className = 'w-3 h-3 rounded-full bg-rose-500 animate-pulse';
+                verdictLabel.className = 'text-xs font-mono uppercase tracking-wider font-extrabold text-rose-400';
+
+                if (violations.length > 0) {
+                    verdictLabel.textContent = `DIBLOKIR OLEH FILTER LARANGAN MUTLAK (${violations.length} PELANGGARAN)`;
+                    verdictTitle.textContent = 'HARD BANNED — TUTUP CHART / DILARANG ENTRY!';
+                    verdictSubtext.textContent = 'Setup atau kondisi Anda saat ini masuk dalam daftar larangan statistik. Jangan memaksakan transaksi.';
+                    verdictPill.textContent = 'BANNED SETUP';
+                } else {
+                    verdictLabel.textContent = 'KEPUTUSAN PROTOKOL INSTITUSIONAL';
+                    verdictTitle.textContent = 'DILARANG KLIK ORDER — SYARAT BELUM LENGKAP';
+                    verdictSubtext.textContent = `Anda baru memverifikasi ${totalChecked} dari 12 poin wajib. Pastikan catatan jurnal di SOP 8 juga telah diisi.`;
+                    verdictPill.textContent = `NO TRADE (${totalChecked}/12)`;
+                }
+
+                verdictPill.className = 'px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 tracking-tight';
+                btnLog.disabled = true;
+                btnLog.className = 'px-4 py-2 rounded-xl bg-emerald-600/30 text-emerald-300/50 border border-emerald-500/20 text-xs font-bold transition cursor-not-allowed';
+            }
+        }
+
+        function copyJournalNote() {
+            const input = document.getElementById('journalThesisInput');
+            const copyText = document.getElementById('copyBtnText');
+            if (!input.value.trim()) {
+                fillTemplateThesis();
+            }
+            input.select();
+            input.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                copyText.textContent = '✓ Tersalin!';
+                setTimeout(() => { copyText.textContent = 'Salin Catatan Note'; }, 2000);
+            } catch (e) {
+                copyText.textContent = 'Gagal Salin';
+            }
+        }
+
+        function copySheetRowTsv() {
+            const session = document.getElementById('paramSession').value;
+            const alignRaw = document.getElementById('paramAlignment').value;
+            const [cond, entry] = alignRaw.split('_');
+            const score = parseInt(document.getElementById('paramScore').value, 10);
+            const geoRaw = document.getElementById('paramGeo').value;
+            const geo = geoRaw === 'NEWS_WAIT' || geoRaw === 'NEWS_NOW' ? 'NEWS' : geoRaw;
+            const tech = document.getElementById('paramTech').value;
+            const outcome = document.getElementById('defaultOutcomeSelect') ? document.getElementById('defaultOutcomeSelect').value : 'TP';
+            const winVal = outcome === 'TP' ? '1' : (outcome === 'SL' ? '0' : '');
+            const dateIso = new Date().toISOString().split('T')[0];
+
+            const sellScore = entry === 'Sell' ? score : 0;
+            const buyScore = entry === 'Buy' ? score : 0;
+
+            const tsvRow = `47\t${dateIso}\t${session}\tXAU/USD\t${cond}\t${entry}\t${sellScore}\t${buyScore}\t${geo}\t${tech}\t${outcome}\t${winVal}`;
+            const temp = document.createElement('textarea');
+            temp.value = tsvRow;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+
+            const btn = document.getElementById('copyRowBtnText');
+            btn.textContent = '✓ Baris Tersalin! (Tinggal Ctrl+V di Sheet)';
+            setTimeout(() => { btn.textContent = 'Salin Baris Data Trading'; }, 2500);
+        }
+
+        async function logVerifiedTrade() {
+            const session = document.getElementById('paramSession').value;
+            const alignRaw = document.getElementById('paramAlignment').value;
+            const [cond, entry] = alignRaw.split('_');
+            const align = `${cond} + ${entry}`;
+            const score = parseInt(document.getElementById('paramScore').value, 10);
+            const geoRaw = document.getElementById('paramGeo').value;
+            const geo = geoRaw === 'NEWS_WAIT' || geoRaw === 'NEWS_NOW' ? 'NEWS' : geoRaw;
+            const tech = document.getElementById('paramTech').value;
+            const risk = document.getElementById('allowedRiskText').textContent;
+            const thesis = document.getElementById('journalThesisInput').value.trim();
+            const outcome = document.getElementById('defaultOutcomeSelect') ? document.getElementById('defaultOutcomeSelect').value : 'OPEN';
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            const dateIso = now.toISOString().split('T')[0];
+
+            const btnLog = document.getElementById('btnLogTrade');
+            const originalText = btnLog.textContent;
+            const webhookUrl = localStorage.getItem('xau_sheets_webhook_url') || '';
+
+            let syncStatus = 'Lokal';
+            if (webhookUrl) {
+                btnLog.textContent = 'Mengirim ke Google Sheets...';
+                btnLog.disabled = true;
+                try {
+                    const payload = {
+                        date: dateIso,
+                        session: session,
+                        cond: cond,
+                        entry: entry,
+                        sellScore: entry === 'Sell' ? score : 0,
+                        buyScore: entry === 'Buy' ? score : 0,
+                        geo: geo,
+                        tech: tech,
+                        outcome: outcome,
+                        thesis: thesis
+                    };
+                    await fetch(webhookUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    syncStatus = '✓ Terkirim ke Google Sheets';
+                } catch (err) {
+                    syncStatus = '⚠ Gagal Sync (Tersimpan Lokal)';
+                }
+                btnLog.disabled = false;
+                btnLog.textContent = '✓ Tersimpan!';
+                setTimeout(() => { btnLog.textContent = originalText; }, 2200);
+            }
+
+            const logs = JSON.parse(localStorage.getItem('xau_preflight_logs') || '[]');
+            logs.unshift({
+                time: timeStr,
+                setup: `${align} | Skor ${score} | ${tech}`,
+                risk: risk,
+                thesis: thesis,
+                sync: syncStatus
+            });
+            localStorage.setItem('xau_preflight_logs', JSON.stringify(logs.slice(0, 10)));
+            renderSessionLogs();
+        }
+
+        function toggleSheetsModal() {
+            const modal = document.getElementById('sheetsConfigModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveWebhookUrl() {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            const feedback = document.getElementById('webhookSaveFeedback');
+            const dot = document.getElementById('sheetsStatusDot');
+            const label = document.getElementById('sheetsBtnLabel');
+
+            if (url && url.startsWith('https://script.google.com/')) {
+                localStorage.setItem('xau_sheets_webhook_url', url);
+                feedback.textContent = '✓ Terhubung! Setiap klik Simpan akan otomatis mengisi Data Trading & Note.';
+                feedback.className = 'text-[11px] font-mono text-emerald-400';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                label.textContent = 'Sheets Terhubung';
+            } else {
+                localStorage.removeItem('xau_sheets_webhook_url');
+                feedback.textContent = 'URL dikosongkan / belum valid. Mode penyimpanan lokal aktif.';
+                feedback.className = 'text-[11px] font-mono text-amber-400';
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                label.textContent = 'Hubungkan Google Sheets';
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const box = document.getElementById('appsScriptCodeBox');
+            const btnText = document.getElementById('copyScriptBtnText');
+            box.select();
+            box.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                btnText.textContent = '✓ Kode Apps Script Tersalin!';
+                setTimeout(() => { btnText.textContent = 'Salin Kode Apps Script'; }, 2200);
+            } catch (e) {
+                btnText.textContent = 'Gagal Menyalin';
+            }
+        }
+
+        function renderSessionLogs() {
+            const container = document.getElementById('sessionLogContainer');
+            const logs = JSON.parse(localStorage.getItem('xau_preflight_logs') || '[]');
+
+            if (logs.length === 0) {
+                container.innerHTML = `<div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 text-slate-400 text-center">Belum ada transaksi yang diverifikasi pada sesi ini.</div>`;
+                return;
+            }
+
+            container.innerHTML = logs.map((item, idx) => `
+                <div class="p-3.5 rounded-xl bg-slate-900/85 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">VERIFIED #${logs.length - idx}</span>
+                            <span class="font-mono font-bold text-white">${item.setup}</span>
+                            <span class="text-slate-400 font-mono text-[11px]">• ${item.time}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-[10px]">${item.sync || 'Lokal'}</span>
+                        </div>
+                        <p class="text-slate-300 text-xs">${item.thesis}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 font-mono text-[11px] text-amber-400 shrink-0 self-start sm:self-center">
+                        ${item.risk}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function clearSessionLogs() {
+            localStorage.removeItem('xau_preflight_logs');
+            renderSessionLogs();
+        }
+
+        function resetAllProtocol() {
+            document.querySelectorAll('.pf-check').forEach(chk => chk.checked = false);
+            document.getElementById('dailyStatusSelect').value = 'trade1';
+            document.getElementById('streakStatusSelect').value = 'normal';
+            document.getElementById('paramSession').value = 'New York';
+            document.getElementById('paramAlignment').value = 'Bull_Buy';
+            document.getElementById('paramScore').value = '2';
+            document.getElementById('paramGeo').value = 'Nothing';
+            document.getElementById('paramTech').value = 'LS';
+            document.getElementById('journalThesisInput').value = '';
+            handleThesisInput();
+            evaluateProtocol();
+        }
+
+        window.onload = function () {
+            const savedUrl = localStorage.getItem('xau_sheets_webhook_url') || '';
+            if (savedUrl) {
+                document.getElementById('webhookUrlInput').value = savedUrl;
+                saveWebhookUrl();
+            }
+            evaluateProtocol();
+            renderSessionLogs();
+        };
+    </script>
+</body>
+</html>
