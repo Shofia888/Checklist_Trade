@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Flight Execution Protocol — Funded Account XAU/USD (FundedNext Stellar Lite)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#131c2e',
+                            950: '#070b14',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070b14;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.08), transparent 32%),
+                radial-gradient(circle at 88% 85%, rgba(245, 158, 11, 0.07), transparent 32%);
+        }
+        .glass-panel {
+            background: rgba(19, 28, 46, 0.84);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .funded-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .check-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .check-card:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(30, 41, 59, 0.65);
+        }
+        .check-card.checked-state {
+            background: rgba(6, 78, 59, 0.25);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-emerald-500 selection:text-slate-950 pb-16">
+
+    <!-- Top Header & Funded Account Telemetry -->
+    <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl funded-badge flex items-center justify-center text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25">
+                    FN
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="font-extrabold text-white text-sm sm:text-base tracking-tight">PRE-FLIGHT EXECUTION PROTOCOL</h1>
+                        <span id="headerAccountBadge" class="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 rounded-full font-bold">
+                            FUNDED ACCOUNT • $5K STELLAR LITE
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Protokol Perlindungan Modal, Anti-Penalti News 40% &amp; Kalkulator Lot XAU/USD</p>
+                </div>
+            </div>
+
+            <!-- Live Progress, Sheets & Reset Controls -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+                <button onclick="toggleSheetsModal()" class="px-3 py-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 text-xs font-semibold border border-emerald-500/40 transition flex items-center gap-1.5">
+                    <span id="sheetsStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="sheetsBtnLabel">Hubungkan Google Sheets</span>
+                </button>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                    <span class="text-[11px] text-slate-400 font-mono">VERIFIKASI:</span>
+                    <span id="topScoreText" class="text-xs sm:text-sm font-mono font-extrabold text-rose-400">0 / 12</span>
+                </div>
+                <button onclick="resetAllProtocol()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>Reset Form</span>
+                </button>
+            </div>
+        </div>
+        <!-- Progress Bar Line -->
+        <div class="w-full h-1 bg-slate-900 overflow-hidden">
+            <div id="topProgressBar" class="h-full bg-rose-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <!-- GOOGLE SHEETS INTEGRATION MODAL -->
+    <div id="sheetsConfigModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl max-w-3xl w-full p-5 sm:p-6 border border-slate-700 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">INTEGRASI OTOMATIS GOOGLE SHEETS</span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-white mt-1">Hubungkan HTML ke Sheet 'Data Trading' &amp; 'Note'</h3>
+                </div>
+                <button onclick="toggleSheetsModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono">✕ Tutup</button>
+            </div>
+
+            <!-- Step 1: Webhook Input -->
+            <div class="space-y-2 bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                <label class="text-xs font-mono uppercase text-amber-400 font-bold block">Langkah 1: Tempel URL Web App Google Apps Script Anda</label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="webhookUrlInput" type="url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400">
+                    <button onclick="saveWebhookUrl()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition shrink-0">
+                        Simpan Koneksi
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <span id="webhookSaveFeedback" class="text-[11px] font-mono text-slate-400">Status: Belum ada URL Web App yang disimpan.</span>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-mono text-slate-300">Hasil Default ke Sheet:</label>
+                        <select id="defaultOutcomeSelect" class="bg-slate-950 border border-slate-700 text-[11px] text-white rounded-lg px-2 py-1 font-mono">
+                            <option value="OPEN">OPEN (Diisi TP/SL Nanti)</option>
+                            <option value="TP">TP (Win = 1)</option>
+                            <option value="SL">SL (Win = 0)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Copy-Paste Apps Script Code -->
+            <div class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono uppercase text-cyan-400 font-bold">Langkah 2: Kode Apps Script (Kompatibel dengan Deployment Anda Sebelumnya)</span>
+                    <button onclick="copyAppsScriptCode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-mono font-bold border border-slate-700 transition">
+                        <span id="copyScriptBtnText">Salin Kode Apps Script</span>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-300 bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+                    Jika Anda sudah pernah melakukan <em>Deploy Apps Script</em> sebelumnya, Anda <strong>tidak perlu deploy ulang</strong>—cukup tempel URL Web App yang sama di Langkah 1 di atas (atau URL Anda sudah otomatis tersimpan jika dibuka di alamat GitHub Pages yang sama).
+                </p>
+                <textarea id="appsScriptCodeBox" readonly rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] font-mono text-emerald-300 focus:outline-none leading-relaxed">function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    var files = DriveApp.getFilesByName('Trading Jurnal');
+    if (files.hasNext()) {
+      ss = SpreadsheetApp.open(files.next());
+    }
+  }
+  var data = JSON.parse(e.postData.contents);
+
+  var sheetTrade = ss.getSheetByName('Data Trading') || ss.getSheets()[1];
+  var nextRow = 1;
+  var colA = sheetTrade.getRange('A1:A200').getValues();
+  for (var i = 1; i < colA.length; i++) {
+    if (colA[i][0] === 'Skor') break;
+    if (colA[i][0] !== '' && !isNaN(colA[i][0])) {
+      nextRow = i + 2;
+    }
+  }
+  var nextId = nextRow - 1;
+  var winVal = data.outcome === 'TP' ? 1 : (data.outcome === 'SL' ? 0 : '');
+
+  sheetTrade.getRange(nextRow, 1, 1, 12).setValues([[
+    nextId, data.date, data.session, 'XAU/USD',
+    data.cond, data.entry, data.sellScore, data.buyScore,
+    data.geo, data.tech, data.outcome, winVal
+  ]]);
+
+  var sheetNote = ss.getSheetByName('Note') || ss.getSheets()[2];
+  var colNote = sheetNote.getRange('B1:B100').getValues();
+  var noteRow = 2;
+  for (var j = 1; j < colNote.length; j++) {
+    if (colNote[j][0] !== '') noteRow = j + 2;
+  }
+  sheetNote.getRange(noteRow, 1, 1, 2).setValues([[
+    noteRow - 1,
+    'T.' + nextId + ' (' + data.cond + '+' + data.entry + ' | ' + data.tech + '): ' + data.thesis
+  ]]);
+
+  return ContentService.createTextOutput(JSON.stringify({ status: 'success', tradeId: nextId }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+
+        <!-- SECTION 1: FUNDED ACCOUNT COMMAND CENTER & GUARDRAILS -->
+        <section class="glass-panel rounded-2xl p-4 sm:p-5 space-y-4 border-emerald-500/20">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800/80 pb-3.5">
+                <div class="space-y-1">
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">FUNDEDNEXT STELLAR LITE • MODE AKUN FUNDED LIVE</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white">Manajemen Risiko Payout, Rem Darurat &amp; 10-Bullet Shield</h2>
+                </div>
+
+                <!-- Dynamic Funded Hard Limits Telemetry -->
+                <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono">
+                    <span class="px-2.5 py-1 rounded-lg bg-rose-950/50 border border-rose-500/30 text-rose-300">
+                        Daily DD 4%: <strong id="limitDailyDdText">-$200</strong>
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-rose-950/50 border border-rose-500/30 text-rose-300">
+                        Static Floor 8%: <strong id="limitStaticFloorText">$4.600</strong>
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-amber-950/50 border border-amber-500/40 text-amber-300">
+                        Max Risk 3%: <strong id="limitMaxRiskText">$150</strong>
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-emerald-300">
+                        Payout: <strong>10 Hari Kerja (80%)</strong>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Permanent Funded Rules Guardrail Banner -->
+            <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/45 text-xs text-amber-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="space-y-1">
+                    <strong class="text-amber-400 font-mono uppercase block">DUA ATURAN PENALTI KHUSUS AKUN FUNDED (WAJIB PATUH 100%):</strong>
+                    <p class="leading-relaxed">
+                        <strong>1) News Trading Profit 40%:</strong> Profit yang diambil di sekitar rilis berita <em>high-impact</em> akan <strong>dipotong 60%</strong> &rarr; Wajib tunggu <strong>&gt;30 menit pasca NEWS</strong>.
+                        <span class="hidden sm:inline"> | </span><br class="sm:hidden">
+                        <strong>2) Max Risk 3% At Any Time (<span id="bannerMaxRiskVal">$150</span>):</strong> Hanya boleh <strong>1 posisi tunggal aktif</strong>—dilarang keras <em>layering / averaging</em>.
+                    </p>
+                </div>
+                <span id="payoutRefundPill" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 font-mono text-[11px] font-bold text-emerald-300 shrink-0 self-start md:self-center">
+                    Target Payout #1: Amankan Modal
+                </span>
+            </div>
+
+            <!-- Interactive Funded Account Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <!-- Account Size Selector (Supports Scaling $5K -> $10K -> $25K) -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                    <label class="text-[10px] font-mono uppercase text-emerald-400 block mb-1">Ukuran Akun Funded</label>
+                    <select id="accountSizeSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="5000">Stellar Lite $5.000 (4%/8%)</option>
+                        <option value="10000">Stellar Lite $10.000 (Scaling)</option>
+                        <option value="25000">Stellar Lite $25.000 (Scaling)</option>
+                    </select>
+                </div>
+
+                <!-- Payout Cycle Selector -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                    <label class="text-[10px] font-mono uppercase text-cyan-400 block mb-1">Siklus Payout (10 HK)</label>
+                    <select id="payoutCycleSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="P1">Payout #1 (Beli Akun $10K)</option>
+                        <option value="P2">Payout #2 (Tabung Scaling)</option>
+                        <option value="P3">Payout #3 (+Refund Fee $29,99)</option>
+                        <option value="P4">Payout #4+ (Cashflow Rutin)</option>
+                    </select>
+                </div>
+
+                <!-- Funded Risk Sizing Mode -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                    <label class="text-[10px] font-mono uppercase text-amber-400 block mb-1">Mode Risiko Funded</label>
+                    <select id="riskModeSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="shield08">0,80% Shield (Rekomendasi Funded)</option>
+                        <option value="ultra07">0,70% Ultra-Safe (Jaga Payout)</option>
+                        <option value="tiered">Auto Tiered (1,0% A+ / 0,8% B)</option>
+                    </select>
+                </div>
+
+                <!-- Daily Trade Counter -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                    <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Kuota Harian (Max 2 Trade)</label>
+                    <select id="dailyStatusSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-emerald-400">
+                        <option value="trade1">Trade Pertama Hari Ini (0 Trade)</option>
+                        <option value="trade2_after_sl">Trade Kedua (Pasca 1x SL &amp; Jeda &gt;60m)</option>
+                        <option value="trade1_tp">Trade Pertama Sudah TP (Lock Green)</option>
+                        <option value="max_reached">Sudah 2x Trade Hari Ini</option>
+                    </select>
+                </div>
+
+                <!-- Streak Status -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5">
+                    <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Kondisi Streak Terakhir</label>
+                    <select id="streakStatusSelect" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:border-emerald-400">
+                        <option value="normal">Normal (0–1x SL / 1–2x TP)</option>
+                        <option value="recovery">Pemulihan 0,50% (Pasca Libur 24j)</option>
+                        <option value="lockout_2sl">Baru Kena 2x SL Beruntun (&lt;24j)</option>
+                        <option value="winstreak">Euforia Win Streak (3x–5x TP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dynamic Active Risk Summary Strip -->
+            <div id="riskAllocationCard" class="bg-emerald-950/25 border border-emerald-500/35 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span class="text-[11px] font-mono uppercase text-emerald-400 font-bold">ALOKASI RISIKO AKTIF:</span>
+                    <span id="allowedRiskText" class="text-sm sm:text-base font-mono font-extrabold text-white">0,80% ($40) [10-BULLET SHIELD]</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono">
+                    <span id="allowedTargetText" class="text-emerald-300 font-semibold">TP 1:1 +$40 | 1:1,5 +$60</span>
+                    <span id="payoutSharePreview" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-300 font-bold">Hak Bersih 80%: +$32 / +$48</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: AUTOMATIC XAU/USD LOT CALCULATOR & MAX RISK 3% MONITOR -->
+        <section class="glass-panel rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">KALKULATOR LOT PRESISI XAU/USD (KONTRAK 100 OZ)</span>
+                    <h2 class="text-sm sm:text-base font-bold text-white mt-0.5">Hitung Lot Eksekusi Tunggal &amp; Verifikasi Batas Max Risk 3%</h2>
+                </div>
+                <span class="text-[11px] font-mono text-slate-400">Otomatis dibulatkan ke bawah (2 desimal) untuk pengaman <em>slippage</em></span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                <!-- Left 6 Cols: SL Distance Input & Presets -->
+                <div class="lg:col-span-6 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label for="slDistanceInput" class="text-xs font-mono text-slate-300 font-semibold">Jarak Stop Loss XAU/USD (Dolar Emas):</label>
+                        <span id="slPipsEquivalent" class="text-[11px] font-mono text-amber-400">= 60 Pips / 600 Points</span>
+                    </div>
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                        <div class="relative flex-1 min-w-[110px]">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">$</span>
+                            <input id="slDistanceInput" type="number" step="0.5" min="1" max="50" value="6" oninput="calculateXauLot()" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-7 pr-3 py-2 text-sm font-mono font-bold text-white focus:outline-none focus:border-emerald-400">
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="setSlPreset(4)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$4</button>
+                            <button type="button" onclick="setSlPreset(5)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$5</button>
+                            <button type="button" onclick="setSlPreset(6)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$6</button>
+                            <button type="button" onclick="setSlPreset(8)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$8</button>
+                            <button type="button" onclick="setSlPreset(10)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$10</button>
+                            <button type="button" onclick="setSlPreset(12)" class="px-2.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition">$12</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 6 Cols: Calculated Lot, Net 80% Reward & Max Risk Ratio -->
+                <div class="lg:col-span-6 grid grid-cols-3 gap-2.5">
+                    <div class="bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-mono uppercase text-emerald-400 block">Lot Eksekusi</span>
+                        <span id="calcLotOutput" class="text-xl sm:text-2xl font-mono font-extrabold text-white block mt-0.5">0.06</span>
+                        <span id="calcActualRiskText" class="text-[10px] font-mono text-emerald-300">Risiko Riil: $36,00</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-mono uppercase text-cyan-400 block">Target TP (1:1 / 1:1,5)</span>
+                        <span id="calcTpDistanceText" class="text-sm sm:text-base font-mono font-bold text-white block mt-1">$6,0 / $9,0</span>
+                        <span id="calcTpNetText" class="text-[10px] font-mono text-amber-300">Net 80%: +$29 / +$43</span>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
+                        <span class="text-[10px] font-mono uppercase text-amber-400 block">Rasio Max Risk 3%</span>
+                        <span id="calcMaxRiskRatio" class="text-sm sm:text-base font-mono font-bold text-emerald-400 block mt-1">24,0%</span>
+                        <span id="calcMaxRiskCeiling" class="text-[10px] font-mono text-slate-400">dari batas $150</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: PRE-FLIGHT PARAMETER SCANNER (HARD BANNED LIST DETECTOR) -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">DETEKTOR OTOMATIS HARD BANNED LIST &amp; PENALTI FUNDED</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">Pilih Parameter Pasar Saat Ini Sebelum Mencentang Checklist</h2>
+                </div>
+                <span id="setupExpectancyBadge" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto">
+                    Win Rate Historis Setup: 100,0%
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <!-- 1. Sesi -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">1. Sesi Pasar</label>
+                    <select id="paramSession" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="New York">New York (Valid)</option>
+                        <option value="Asia">Asia (HARD BANNED!)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Sesi Asia WR 0% (Trade #1 SL)</p>
+                </div>
+
+                <!-- 2. Kondisi Pasar & Arah Entry -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">2. Tren &amp; Arah Entry</label>
+                    <select id="paramAlignment" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="Bull_Buy">Bull + Buy (Searah Tren)</option>
+                        <option value="Bear_Sell">Bear + Sell (Searah Tren)</option>
+                        <option value="Bull_Sell">Bull + Sell (Counter-Trend)</option>
+                        <option value="Bear_Buy">Bear + Buy (Counter-Trend)</option>
+                    </select>
+                    <p id="alignmentHint" class="text-[10px] text-emerald-400">Bull+Buy+LS = 100% WR (11/11 TP)</p>
+                </div>
+
+                <!-- 3. Skor Korelasi Makro -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">3. Skor Makro (DXY/US10Y)</label>
+                    <select id="paramScore" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="2">Skor 2 (DXY &amp; US10Y Bearish)</option>
+                        <option value="1">Skor 1 (DXY &amp; US10Y Bullish)</option>
+                        <option value="3">Skor 3 (Divergen / Berlawanan)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Skor 1 WR 81,8% • Skor 2 WR 73,3%</p>
+                </div>
+
+                <!-- 4. Katalis Geopolitik / News -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">4. Katalis &amp; Filter News 40%</label>
+                    <select id="paramGeo" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-2 font-semibold focus:outline-none focus:border-emerald-400">
+                        <option value="Nothing">Nothing (Bebas News — 100% Profit)</option>
+                        <option value="NEWS_WAIT">NEWS (Sudah Tunggu &gt;30m)</option>
+                        <option value="NEWS_NOW">NEWS (&lt;30m — PENALTI 60%!)</option>
+                        <option value="WAR">WAR (Eskalasi Konflik)</option>
+                    </select>
+                    <p id="geoHint" class="text-[10px] text-emerald-400">Bebas potongan News Profit 40%</p>
+                </div>
+
+                <!-- 5. Pemicu Teknikal -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5">
+                    <label class="text-[11px] font-mono uppercase text-slate-400 block">5. Konfirmasi Teknikal</label>
+                    <select id="paramTech" onchange="evaluateProtocol()" class="w-full bg-slate-950 border border-slate-700 text-xs text-emerald-400 rounded-lg px-2.5 py-2 font-bold focus:outline-none focus:border-emerald-400">
+                        <option value="LS">LS (Liquidity Sweep Valid)</option>
+                        <option value="MSS">MSS Murni (HARD BANNED!)</option>
+                        <option value="NOTHING">NOTHING / FOMO (HARD BANNED!)</option>
+                    </select>
+                    <p class="text-[10px] text-emerald-400">LS WR 85,7% (PF 6,00) • NOTHING 0%</p>
+                </div>
+            </div>
+
+            <!-- Dynamic Hard-Ban Warning Banner -->
+            <div id="hardBanAlert" class="hidden p-4 rounded-xl bg-rose-950/40 border-2 border-rose-500/70 text-rose-200 space-y-1.5">
+                <div class="flex items-center gap-2 text-rose-400 font-mono font-extrabold text-xs sm:text-sm uppercase">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <span>PELANGGARAN DAFTAR LARANGAN MUTLAK / ATURAN AKUN FUNDED!</span>
+                </div>
+                <ul id="hardBanList" class="text-xs space-y-1 list-disc list-inside text-rose-100 font-medium">
+                    <!-- Populated dynamically by JS -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 4: 3-STAGE PRE-FLIGHT CHECKLIST (FUNDED EDITION) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            <!-- TAHAP 1: LINGKUNGAN MAKRO & WAKTU -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">GERBANG 1</span>
+                            <h3 class="text-base font-bold text-white mt-1">Filter Lingkungan Makro &amp; News 40%</h3>
+                        </div>
+                        <span id="stage1Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 1.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">1.1 Eksekusi di Sesi New York</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Bukan Sesi Asia. Likuiditas institusional XAU/USD berada pada sesi New York dengan <em>spread</em> yang sehat.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 1.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-amber-300 block">1.2 Bebas Jendela NEWS (&gt;30m) — Anti Potongan 60%</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Tidak ada rilis berita <em>High-Impact</em> (CPI, NFP, PMI, FOMC) dalam 30 menit ke depan atau <strong>sudah lewat &gt;30 menit pasca rilis</strong> agar 100% profit dihitung untuk <em>payout</em> (bebas aturan <em>News Trading Profit 40%</em>).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 1.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-1 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">1.3 Validasi Skor Korelasi DXY &amp; US10Y</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Prioritas <strong>Skor 1</strong> (DXY &amp; Yield naik &rarr; <em>Sell</em>) atau <strong>Skor 2</strong> (DXY &amp; Yield turun &rarr; <em>Buy</em>). Jika <strong>Skor 3</strong>, dilarang transaksi di pasar <em>Bearish</em> kecuali di ekstrem ±2 SD + DXY tertahan di 100.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Win Rate Skor 1 &amp; 2:</span>
+                    <span class="text-emerald-400 font-bold">76,92% (+$700)</span>
+                </div>
+            </div>
+
+            <!-- TAHAP 2: KONFIRMASI STRUKTUR & TEKNIKAL -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">GERBANG 2</span>
+                            <h3 class="text-base font-bold text-white mt-1">Konfirmasi Struktur &amp; Teknikal</h3>
+                        </div>
+                        <span id="stage2Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 2.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">2.1 Keselarasan Tren / Syarat Ekstrem 2 SD</span>
+                                    <p id="check21DynamicText" class="text-[11px] text-slate-300 leading-relaxed">Searah tren utama (<code>Bull+Buy</code> / <code>Bear+Sell</code>). Jika <em>Counter-Trend</em>, wajib berada di area ekstrem <strong>±2 Standar Deviasi (2 SD)</strong> atau deviasi &gt;0,5% dari 200w SMA + dukungan suku bunga/obligasi.</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 2.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-emerald-400 block">2.2 Pemicu Wajib: Liquidity Sweep (LS)</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Harga telah menyapu <em>high/low</em> likuiditas sebelumnya, gagal menembus (<em>failed breakout</em>), dan <strong>menutup kembali di dalam rentang harga</strong>. (Bukan <code>MSS</code> murni &amp; bukan <code>NOTHING</code>!).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 2.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-2 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">2.3 Ruang Target RR 1:1 / 1:1,5 ke SD 0</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Tersedia ruang <em>Risk-to-Reward</em> minimal <strong>1:1</strong> (atau <strong>1:1,5</strong> khusus dari ekstrem 2 SD) menuju titik ekuilibrium (<strong>SD 0</strong>) tanpa terhalang <em>support/resistance</em> mayor.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Profit Factor Setup LS:</span>
+                    <span class="text-emerald-400 font-bold">6,00 (WR 85,71%)</span>
+                </div>
+            </div>
+
+            <!-- TAHAP 3: VALIDASI PSIKOLOGIS & RISIKO FUNDED -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">GERBANG 3</span>
+                            <h3 class="text-base font-bold text-white mt-1">Validasi Psikologis &amp; Risiko Funded</h3>
+                        </div>
+                        <span id="stage3Badge" class="text-xs font-mono font-bold text-slate-400">0/3</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Check 3.1 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">3.1 Penutupan Candle Sempurna (Anti-FOMO)</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Saya sudah menunggu <em>candle</em> konfirmasi tutup sempurna dan tidak terburu-buru masuk saat <em>candle</em> masih berlari (<em>"Terburu-buru adalah keputusan terburuk"</em> — Note #2).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 3.2 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-white block">3.2 Bebas Emosi Revenge &amp; Euforia Payout</span>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">Saya tenang, tidak memaksakan profit cepat menjelang hari ke-10 <em>payout</em>, tidak membalas SL, dan waspada terhadap euforia pasca-<em>win streak</em> (kasus Trade #42–#44).</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- Check 3.3 -->
+                        <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-3 mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0">
+                                <div class="space-y-1">
+                                    <span class="text-xs font-bold text-cyan-400 block">3.3 Posisi Tunggal &amp; Risiko &lt; Max Risk 3%</span>
+                                    <p id="check33DynamicText" class="text-[11px] text-slate-300 leading-relaxed">Lot sudah disalin dari Kalkulator Lot di atas (<strong>$40 Shield</strong>), hanya <strong>1 posisi tunggal terbuka</strong> (tanpa <em>layering/averaging</em>), jauh di bawah batas <em>Max Risk 3% ($150)</em>.</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex justify-between">
+                    <span>Batas Aman Harian (2x SL):</span>
+                    <span id="stage3SafeDailyText" class="text-cyan-400 font-bold">Max -$80 (Daily DD -$200)</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECTION 5: SOP 8 — FINAL 10-SECOND GATE & MANDATORY JOURNAL NOTE BUILDER -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-semibold">SOP 8 • TIGA PERTANYAAN TERAKHIR (10 DETIK) &amp; JURNAL WAJIB</span>
+                    <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">Konfirmasi Kejujuran Eksekusi &amp; Penulisan Tesis Lembar 'Note'</h2>
+                </div>
+                <span id="stage4Badge" class="text-xs font-mono font-bold text-slate-400">0/3 Terverifikasi</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <!-- Left 5 Cols: 3 Final Questions -->
+                <div class="lg:col-span-5 space-y-3">
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 1 (Validasi LS):</strong>
+                                Apakah benar-benar ada <strong>Liquidity Sweep (LS)</strong> yang sudah <em>close</em>? <em>(Jika hanya mengira-ngira = BATALKAN)</em>
+                            </span>
+                        </div>
+                    </label>
+
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 2 (Validasi Kesabaran &amp; 2 SD):</strong>
+                                Apakah saya masuk karena sabar menunggu di area ekstrem / <strong>2 SD</strong>, bukan karena takut ketinggalan harga (FOMO)?
+                            </span>
+                        </div>
+                    </label>
+
+                    <label class="check-card block p-3.5 rounded-xl bg-slate-900/75 border border-slate-800 cursor-pointer select-none">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" id="chkJournalWritten" onchange="evaluateProtocol()" class="pf-check stage-4 mt-0.5 w-4 h-4 rounded accent-amber-500 shrink-0">
+                            <span class="text-xs text-slate-200 leading-relaxed">
+                                <strong class="text-white block">Pertanyaan 3 (Wajib Tulis Jurnal Dulu):</strong>
+                                Saya sudah menulis minimal 1 kalimat alasan <strong>Makro + Teknikal (LS &amp; SD)</strong> di kotak sebelah kanan sebelum menekan tombol order.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Right 7 Cols: Pre-Trade Thesis Input & One-Click Copy / Sync -->
+                <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="journalThesisInput" class="text-xs font-mono uppercase text-amber-400 font-bold">Generator Catatan Jurnal Akun Funded (Lembar 'Note')</label>
+                            <button onclick="fillTemplateThesis()" class="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline">
+                                + Isi Template Funded Otomatis
+                            </button>
+                        </div>
+                        <textarea id="journalThesisInput" rows="4" oninput="handleThesisInput()" placeholder="Contoh: [FUNDED $5K | Payout #1 | Risk $40 | 0.06 Lot | SL $6] Sesi New York | KP Bull + Entry Buy (Skor 2, bebas NEWS): Harga melakukan Liquidity Sweep (LS) di area ekstrem 2 SD dengan target mean reversion ke SD 0..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <span id="charCountInfo" class="text-[11px] font-mono text-slate-400">Minimal 20 karakter untuk membuka kunci eksekusi</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="copySheetRowTsv()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5" title="Salin seluruh baris untuk ditempel langsung ke lembar Data Trading">
+                                <span id="copyRowBtnText">Salin Baris Data Trading</span>
+                            </button>
+                            <button onclick="copyJournalNote()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                                <span id="copyBtnText">Salin Catatan Note</span>
+                            </button>
+                            <button onclick="logVerifiedTrade()" id="btnLogTrade" disabled class="px-4 py-2 rounded-xl bg-emerald-600/30 text-emerald-300/50 border border-emerald-500/20 text-xs font-bold transition cursor-not-allowed">
+                                Simpan &amp; Kirim ke Google Sheets
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: MASTER EXECUTION VERDICT BANNER -->
+        <section id="masterVerdictBox" class="p-6 rounded-2xl bg-rose-950/35 border-2 border-rose-500/50 transition-all duration-300">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span id="verdictDot" class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+                        <span id="verdictLabel" class="text-xs font-mono uppercase tracking-wider font-extrabold text-rose-400">KEPUTUSAN PROTOKOL AKUN FUNDED</span>
+                    </div>
+                    <h2 id="verdictTitle" class="text-xl sm:text-2xl font-extrabold text-white">DILARANG KLIK ORDER — SYARAT BELUM LENGKAP</h2>
+                    <p id="verdictSubtext" class="text-xs sm:text-sm text-slate-300">Lengkapi seluruh 12 poin verifikasi (Tahap 1–3 &amp; SOP 8) serta pastikan bebas pelanggaran Hard Banned &amp; aturan FundedNext.</p>
+                </div>
+
+                <div class="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+                    <div id="verdictPill" class="px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 tracking-tight">
+                        NO TRADE (0/12)
+                    </div>
+                    <span id="verdictEvText" class="text-[11px] font-mono text-slate-300">EV Bersih Setup LS (Split 80%): +$22,86 / Trade</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: SESSION PRE-FLIGHT LOG -->
+        <section class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">RIWAYAT VERIFIKASI AKUN FUNDED</span>
+                    <h3 class="text-sm sm:text-base font-bold text-white">Log Pre-Flight Sesi Berjalan (Tersimpan di Browser)</h3>
+                </div>
+                <button onclick="clearSessionLogs()" class="text-xs font-mono text-slate-400 hover:text-rose-400 transition">Hapus Riwayat</button>
+            </div>
+
+            <div id="sessionLogContainer" class="space-y-2.5 text-xs">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let currentAccountSize = 5000;
+        let currentAllowedRiskUsd = 40;
+        let currentCalculatedLot = 0.06;
+
+        // Full Tailwind classes written explicitly so CDN compiler never purges them
+        const setupStatsLookup = {
+            'Bull_Buy_LS': {
+                wr: '100,0%',
+                detail: '11 TP / 0 SL (+$550) • A+ Setup Terbaik',
+                badgeClass: 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 self-start sm:self-auto'
+            },
+            'Bear_Sell_LS': {
+                wr: '83,3%',
+                detail: '5 TP / 1 SL (+$200) • Trend-Following Kuat',
+                badgeClass: 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 self-start sm:self-auto'
+            },
+            'Bull_Sell_LS': {
+                wr: '75,0%',
+                detail: '6 TP / 2 SL (+$200) • Wajib 2 SD & Yield Naik',
+                badgeClass: 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 self-start sm:self-auto'
+            },
+            'Bear_Buy_LS': {
+                wr: '66,7%',
+                detail: '2 TP / 1 SL (+$50) • Hati-hati! Wajib 2 SD & DXY < 100',
+                badgeClass: 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/35 self-start sm:self-auto'
+            }
+        };
+
+        const payoutGoalLabels = {
+            'P1': 'Target Payout #1: Amankan Modal + Beli $10K',
+            'P2': 'Target Payout #2: Cashflow + Tabung Scaling',
+            'P3': 'Target Payout #3: Cairkan Refund Fee + Beli $25K',
+            'P4': 'Mode Cashflow Rutin (Tiap 10 Hari Kerja • 80%)'
+        };
+
+        function handleThesisInput() {
+            const text = document.getElementById('journalThesisInput').value.trim();
+            const charInfo = document.getElementById('charCountInfo');
+            const chkWritten = document.getElementById('chkJournalWritten');
+
+            if (text.length >= 20) {
+                charInfo.textContent = `✓ Panjang catatan valid (${text.length} karakter)`;
+                charInfo.className = 'text-[11px] font-mono text-emerald-400';
+                chkWritten.checked = true;
+            } else {
+                charInfo.textContent = `Minimal 20 karakter (${text.length}/20 karakter)`;
+                charInfo.className = 'text-[11px] font-mono text-amber-400';
+                chkWritten.checked = false;
+            }
+            evaluateProtocol();
+        }
+
+        function fillTemplateThesis() {
+            const sizeK = `$${currentAccountSize / 1000}K`;
+            const payoutCycle = document.getElementById('payoutCycleSelect').value;
+            const session = document.getElementById('paramSession').value;
+            const align = document.getElementById('paramAlignment').value;
+            const score = document.getElementById('paramScore').value;
+            const geo = document.getElementById('paramGeo').value;
+            const tech = document.getElementById('paramTech').value;
+            const slDist = document.getElementById('slDistanceInput').value || '6';
+
+            const [cond, entry] = align.split('_');
+            const geoLabel = geo === 'Nothing' ? 'kondisi bebas NEWS (100% profit)' : geo === 'NEWS_WAIT' ? 'pasca rilis NEWS (>30m)' : geo;
+
+            const template = `[FUNDED ${sizeK} | ${payoutCycle} | Risk $${currentAllowedRiskUsd} | ${currentCalculatedLot.toFixed(2)} Lot | SL $${slDist}] Sesi ${session} | KP ${cond} + Entry ${entry} (Skor Makro ${score}, ${geoLabel}): Harga gagal menembus batas support/resistance di area ekstrem 2 SD dan membentuk konfirmasi ${tech} (Liquidity Sweep) yang sudah close, didukung arah US10Y/DXY dengan target mean reversion menuju SD 0.`;
+            document.getElementById('journalThesisInput').value = template;
+            handleThesisInput();
+        }
+
+        function setSlPreset(val) {
+            document.getElementById('slDistanceInput').value = val;
+            calculateXauLot();
+        }
+
+        function calculateXauLot() {
+            const slInput = parseFloat(document.getElementById('slDistanceInput').value);
+            const slDist = (!isNaN(slInput) && slInput > 0) ? slInput : 6;
+            const pips = Math.round(slDist * 10);
+            const points = Math.round(slDist * 100);
+            document.getElementById('slPipsEquivalent').textContent = `= ${pips} Pips / ${points} Points`;
+
+            const maxRiskCeiling = currentAccountSize * 0.03; // 3% At Any Time
+            document.getElementById('calcMaxRiskCeiling').textContent = `dari batas $${maxRiskCeiling.toLocaleString('en-US')}`;
+
+            const lotOut = document.getElementById('calcLotOutput');
+            const actualRiskOut = document.getElementById('calcActualRiskText');
+            const tpDistOut = document.getElementById('calcTpDistanceText');
+            const tpNetOut = document.getElementById('calcTpNetText');
+            const maxRiskRatioOut = document.getElementById('calcMaxRiskRatio');
+
+            if (currentAllowedRiskUsd <= 0) {
+                currentCalculatedLot = 0;
+                lotOut.textContent = '0.00';
+                lotOut.className = 'text-xl sm:text-2xl font-mono font-extrabold text-rose-400 block mt-0.5';
+                actualRiskOut.textContent = 'LOCKOUT ($0)';
+                tpDistOut.textContent = '-';
+                tpNetOut.textContent = 'WAJIB BERHENTI';
+                maxRiskRatioOut.textContent = '0,0%';
+                maxRiskRatioOut.className = 'text-sm sm:text-base font-mono font-bold text-slate-400 block mt-1';
+                return;
+            }
+
+            // XAU/USD standard contract (100 oz): 1.00 lot = $100 per $1 move
+            const rawLot = currentAllowedRiskUsd / (slDist * 100);
+            const flooredLot = Math.floor(rawLot * 100) / 100;
+            currentCalculatedLot = flooredLot;
+
+            const actualRisk = flooredLot * slDist * 100;
+            const tp1Dist = slDist;
+            const tp15Dist = slDist * 1.5;
+            const net80Tp1 = actualRisk * 0.80;
+            const net80Tp15 = actualRisk * 1.5 * 0.80;
+            const maxRiskPct = (actualRisk / maxRiskCeiling) * 100;
+
+            if (flooredLot < 0.01) {
+                lotOut.textContent = '< 0.01';
+                lotOut.className = 'text-xl sm:text-2xl font-mono font-extrabold text-rose-400 block mt-0.5';
+                actualRiskOut.textContent = 'SL Terlalu Lebar!';
+            } else {
+                lotOut.textContent = flooredLot.toFixed(2);
+                lotOut.className = 'text-xl sm:text-2xl font-mono font-extrabold text-white block mt-0.5';
+                actualRiskOut.textContent = `Risiko Riil: $${actualRisk.toFixed(2)}`;
+            }
+
+            tpDistOut.textContent = `$${tp1Dist.toFixed(1)} / $${tp15Dist.toFixed(1)}`;
+            tpNetOut.textContent = `Net 80%: +$${net80Tp1.toFixed(0)} / +$${net80Tp15.toFixed(0)}`;
+            maxRiskRatioOut.textContent = `${maxRiskPct.toFixed(1)}%`;
+            maxRiskRatioOut.className = maxRiskPct <= 40
+                ? 'text-sm sm:text-base font-mono font-bold text-emerald-400 block mt-1'
+                : 'text-sm sm:text-base font-mono font-bold text-amber-400 block mt-1';
+        }
+
+        function evaluateProtocol() {
+            document.querySelectorAll('.pf-check').forEach(chk => {
+                const card = chk.closest('.check-card');
+                if (card) {
+                    if (chk.checked) card.classList.add('checked-state');
+                    else card.classList.remove('checked-state');
+                }
+            });
+
+            currentAccountSize = parseInt(document.getElementById('accountSizeSelect').value, 10) || 5000;
+            const sizeK = `$${currentAccountSize / 1000}K`;
+            const dailyDdUsd = currentAccountSize * 0.04;
+            const maxDdUsd = currentAccountSize * 0.08;
+            const staticFloor = currentAccountSize - maxDdUsd;
+            const maxRiskUsd = currentAccountSize * 0.03;
+
+            // Update Funded Telemetry Headers & Badges
+            document.getElementById('headerAccountBadge').textContent = `FUNDED ACCOUNT • ${sizeK} STELLAR LITE`;
+            document.getElementById('limitDailyDdText').textContent = `-$${dailyDdUsd.toLocaleString('en-US')}`;
+            document.getElementById('limitStaticFloorText').textContent = `$${staticFloor.toLocaleString('en-US')}`;
+            document.getElementById('limitMaxRiskText').textContent = `$${maxRiskUsd.toLocaleString('en-US')}`;
+            document.getElementById('bannerMaxRiskVal').textContent = `$${maxRiskUsd.toLocaleString('en-US')}`;
+
+            const payoutCycle = document.getElementById('payoutCycleSelect').value;
+            document.getElementById('payoutRefundPill').textContent = payoutGoalLabels[payoutCycle] || payoutGoalLabels['P1'];
+
+            const riskMode = document.getElementById('riskModeSelect').value;
+            const dailyStatus = document.getElementById('dailyStatusSelect').value;
+            const streakStatus = document.getElementById('streakStatusSelect').value;
+            const session = document.getElementById('paramSession').value;
+            const align = document.getElementById('paramAlignment').value;
+            const score = document.getElementById('paramScore').value;
+            const geo = document.getElementById('paramGeo').value;
+            const tech = document.getElementById('paramTech').value;
+
+            // Determine Grade A+ Setup (Trend-following LS with aligned Macro Score 1 or 2)
+            const isGradeAPlus = tech === 'LS' && (
+                (align === 'Bull_Buy' && (score === '2' || score === '1')) ||
+                (align === 'Bear_Sell' && score === '1')
+            );
+
+            const riskCard = document.getElementById('riskAllocationCard');
+            const allowedRiskText = document.getElementById('allowedRiskText');
+            const allowedTargetText = document.getElementById('allowedTargetText');
+            const payoutSharePreview = document.getElementById('payoutSharePreview');
+
+            let riskLabelShort = '';
+
+            if (streakStatus === 'lockout_2sl' || dailyStatus === 'trade1_tp' || dailyStatus === 'max_reached') {
+                currentAllowedRiskUsd = 0;
+                riskLabelShort = '$0 LOCKOUT';
+                riskCard.className = 'bg-rose-950/35 border border-rose-500/45 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+                allowedRiskText.textContent = '0,00% ($0) [LOCKOUT AKTIF]';
+                allowedTargetText.textContent = 'WAJIB BERHENTI TRADING';
+                payoutSharePreview.textContent = 'Lindungi Lantai $' + staticFloor.toLocaleString('en-US');
+            } else if (streakStatus === 'recovery') {
+                currentAllowedRiskUsd = currentAccountSize * 0.005;
+                riskLabelShort = `$${currentAllowedRiskUsd} Pemulihan`;
+                riskCard.className = 'bg-amber-950/30 border border-amber-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+                allowedRiskText.textContent = `0,50% ($${currentAllowedRiskUsd}) [MODE PEMULIHAN]`;
+                allowedTargetText.textContent = `TP 1:1 +$${currentAllowedRiskUsd} | 1:1,5 +$${(currentAllowedRiskUsd * 1.5).toFixed(1)}`;
+                payoutSharePreview.textContent = `Hak Bersih 80%: +$${(currentAllowedRiskUsd * 0.8).toFixed(0)} / +$${(currentAllowedRiskUsd * 1.2).toFixed(0)}`;
+            } else if (riskMode === 'ultra07') {
+                currentAllowedRiskUsd = currentAccountSize * 0.007;
+                riskLabelShort = `$${currentAllowedRiskUsd} Ultra-Safe`;
+                riskCard.className = 'bg-cyan-950/30 border border-cyan-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+                allowedRiskText.textContent = `0,70% ($${currentAllowedRiskUsd}) [ULTRA-SAFE PAYOUT]`;
+                allowedTargetText.textContent = `TP 1:1 +$${currentAllowedRiskUsd} | 1:1,5 +$${(currentAllowedRiskUsd * 1.5).toFixed(1)}`;
+                payoutSharePreview.textContent = `Hak Bersih 80%: +$${(currentAllowedRiskUsd * 0.8).toFixed(0)} / +$${(currentAllowedRiskUsd * 1.2).toFixed(0)}`;
+            } else if (riskMode === 'tiered' && isGradeAPlus) {
+                currentAllowedRiskUsd = currentAccountSize * 0.01;
+                riskLabelShort = `$${currentAllowedRiskUsd} Grade A+`;
+                riskCard.className = 'bg-emerald-950/30 border border-emerald-400/45 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+                allowedRiskText.textContent = `1,00% ($${currentAllowedRiskUsd}) [GRADE A+ SETUP]`;
+                allowedTargetText.textContent = `TP 1:1 +$${currentAllowedRiskUsd} | 1:1,5 +$${(currentAllowedRiskUsd * 1.5).toFixed(0)}`;
+                payoutSharePreview.textContent = `Hak Bersih 80%: +$${(currentAllowedRiskUsd * 0.8).toFixed(0)} / +$${(currentAllowedRiskUsd * 1.2).toFixed(0)}`;
+            } else {
+                currentAllowedRiskUsd = currentAccountSize * 0.008;
+                riskLabelShort = `$${currentAllowedRiskUsd} Shield`;
+                riskCard.className = 'bg-emerald-950/25 border border-emerald-500/35 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+                allowedRiskText.textContent = `0,80% ($${currentAllowedRiskUsd}) [10-BULLET SHIELD]`;
+                allowedTargetText.textContent = `TP 1:1 +$${currentAllowedRiskUsd} | 1:1,5 +$${(currentAllowedRiskUsd * 1.5).toFixed(0)}`;
+                payoutSharePreview.textContent = `Hak Bersih 80%: +$${(currentAllowedRiskUsd * 0.8).toFixed(0)} / +$${(currentAllowedRiskUsd * 1.2).toFixed(0)}`;
+            }
+
+            // Update Gate 3 dynamic risk copy
+            document.getElementById('check33DynamicText').innerHTML = `Lot sudah disalin dari Kalkulator Lot di atas (<strong>${riskLabelShort}</strong>), hanya <strong>1 posisi tunggal terbuka</strong> (tanpa <em>layering/averaging</em>), jauh di bawah batas <em>Max Risk 3% ($${maxRiskUsd.toLocaleString('en-US')})</em>.`;
+            document.getElementById('stage3SafeDailyText').textContent = `Max -$${(currentAllowedRiskUsd * 2).toLocaleString('en-US')} (Daily DD -$${dailyDdUsd.toLocaleString('en-US')})`;
+
+            // Sync Lot Calculator
+            calculateXauLot();
+
+            // Update Alignment & Geo Hints
+            const alignHint = document.getElementById('alignmentHint');
+            const check21Text = document.getElementById('check21DynamicText');
+            if (align === 'Bull_Buy') {
+                alignHint.textContent = 'Bull+Buy+LS = 100% WR (11 TP, 0 SL)';
+                alignHint.className = 'text-[10px] text-emerald-400';
+                check21Text.innerHTML = 'Transaksi <strong>Searah Tren (Bull + Buy)</strong>. Pastikan harga tidak membeli di pucuk resistensi sebelum sweep selesai.';
+            } else if (align === 'Bear_Sell') {
+                alignHint.textContent = 'Bear+Sell+LS = 83,3% WR (5 TP, 1 SL)';
+                alignHint.className = 'text-[10px] text-emerald-400';
+                check21Text.innerHTML = 'Transaksi <strong>Searah Tren (Bear + Sell)</strong>. Pastikan konfirmasi LS sudah selesai menyapu likuiditas atas.';
+            } else {
+                alignHint.textContent = 'Counter-Trend: Wajib 2 SD + Alasan Makro Kuat!';
+                alignHint.className = 'text-[10px] text-amber-400 font-semibold';
+                check21Text.innerHTML = '<span class="text-amber-300 font-semibold">PERHATIAN COUNTER-TREND:</span> Wajib memenuhi 3 syarat: (1) Konfirmasi LS di ujung harga, (2) Berada di ekstrem <strong>±2 Standar Deviasi (2 SD)</strong> / deviasi &gt;0,5% 200w SMA, dan (3) Didukung katalis imbal hasil US10Y/Fed/DXY.';
+            }
+
+            const geoHint = document.getElementById('geoHint');
+            if (geo === 'Nothing') {
+                geoHint.textContent = 'Bebas potongan News Profit 40% (100% hak payout)';
+                geoHint.className = 'text-[10px] text-emerald-400';
+            } else if (geo === 'NEWS_WAIT') {
+                geoHint.textContent = 'Pastikan jendela news FundedNext sudah lewat!';
+                geoHint.className = 'text-[10px] text-amber-400 font-semibold';
+            } else if (geo === 'NEWS_NOW') {
+                geoHint.textContent = 'BAHAYA: Profit dipotong 60% di Akun Funded!';
+                geoHint.className = 'text-[10px] text-rose-400 font-bold';
+            } else {
+                geoHint.textContent = 'WAR historis WR 25% — Wajib ekstra selektif!';
+                geoHint.className = 'text-[10px] text-amber-400';
+            }
+
+            // Setup Expectancy Badge
+            const expBadge = document.getElementById('setupExpectancyBadge');
+            const key = `${align}_${tech}`;
+            if (tech === 'NOTHING') {
+                expBadge.textContent = 'Win Rate Historis NOTHING: 0,0% (0 TP / 9 SL • -$450)';
+                expBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 self-start sm:self-auto';
+            } else if (tech === 'MSS') {
+                expBadge.textContent = 'Win Rate Historis MSS: 44,4% (PF 0,80 • Bencana)';
+                expBadge.className = 'px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 self-start sm:self-auto';
+            } else if (setupStatsLookup[key]) {
+                const st = setupStatsLookup[key];
+                expBadge.textContent = `Rekam Jejak ${align.replace('_', '+')}+LS: WR ${st.wr} (${st.detail})`;
+                expBadge.className = st.badgeClass;
+            }
+
+            // Hard Ban & Funded Account Rule Violations
+            const violations = [];
+            if (dailyStatus === 'trade1_tp') {
+                violations.push('SOP 7 (Lock the Green Day): Transaksi pertama hari ini sudah TP. Wajib berhenti trading hari ini untuk mengamankan profit menuju payout 10 hari kerja.');
+            }
+            if (dailyStatus === 'max_reached') {
+                violations.push(`SOP 7 (Kuota Harian): Anda sudah mencapai batas maksimal 2 transaksi hari ini. Tutup platform untuk melindungi Daily Loss Limit 4% (-$${dailyDdUsd}).`);
+            }
+            if (streakStatus === 'lockout_2sl') {
+                violations.push(`SOP 7 (Circuit Breaker 2x SL): Anda baru saja terkena 2x SL beruntun. Wajib libur 24 jam penuh untuk melindungi lantai Static DD 8% ($${staticFloor.toLocaleString('en-US')})!`);
+            }
+            if (session === 'Asia') {
+                violations.push('SOP 1 & BANNED #5 (Sesi Asia): Dilarang transaksi di Sesi Asia (Rekam jejak Trade #1: SL). Wajib tunggu Sesi New York.');
+            }
+            if (tech === 'NOTHING') {
+                violations.push('SOP 2 & BANNED #1 (Entry NOTHING): Masuk tanpa konfirmasi teknikal memiliki Win Rate 0,00% (9 SL beruntun). Sangat fatal di akun Funded berbatas 4%/8%!');
+            }
+            if (tech === 'MSS') {
+                violations.push('SOP 2 & BANNED #2 (Entry MSS Murni): Masuk hanya mengandalkan Market Structure Shift tanpa Liquidity Sweep memiliki Win Rate 44,4% ("MSS adalah bencana").');
+            }
+            if ((align === 'Bear_Sell' || align === 'Bear_Buy') && score === '3') {
+                violations.push('SOP 2 & BANNED #3 (Bear + Skor Makro 3): Saat tren Bearish dan DXY vs US10Y divergen (Skor 3), Win Rate historis Anda hanya 11,11% (1 TP, 8 SL).');
+            }
+            if (align === 'Bear_Buy' && (geo === 'NEWS_WAIT' || geo === 'NEWS_NOW' || geo === 'WAR')) {
+                violations.push('SOP 2 & BANNED #4 (Bear + Buy Saat NEWS/WAR): Dilarang menangkap pisau jatuh (Buy di tren Bearish) saat rilis berita atau eskalasi perang (Win Rate 0%).');
+            }
+            if (geo === 'NEWS_NOW') {
+                violations.push('ATURAN FUNDED (News Trading Profit 40%) & SOP 1: Masuk <30 menit di sekitar berita high-impact akan memangkas profit Anda sebesar 60% dan berisiko whipsaw. Wajib tunggu >30 menit!');
+            }
+
+            const banAlert = document.getElementById('hardBanAlert');
+            const banList = document.getElementById('hardBanList');
+            if (violations.length > 0) {
+                banAlert.classList.remove('hidden');
+                banList.innerHTML = violations.map(v => `<li>${v}</li>`).join('');
+            } else {
+                banAlert.classList.add('hidden');
+                banList.innerHTML = '';
+            }
+
+            // Stage Progress Calculation
+            const s1 = document.querySelectorAll('.stage-1:checked').length;
+            const s2 = document.querySelectorAll('.stage-2:checked').length;
+            const s3 = document.querySelectorAll('.stage-3:checked').length;
+            const s4 = document.querySelectorAll('.stage-4:checked').length;
+            const totalChecked = s1 + s2 + s3 + s4;
+            const totalBoxes = 12;
+
+            document.getElementById('stage1Badge').textContent = `${s1}/3`;
+            document.getElementById('stage1Badge').className = `text-xs font-mono font-bold ${s1 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage2Badge').textContent = `${s2}/3`;
+            document.getElementById('stage2Badge').className = `text-xs font-mono font-bold ${s2 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage3Badge').textContent = `${s3}/3`;
+            document.getElementById('stage3Badge').className = `text-xs font-mono font-bold ${s3 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            document.getElementById('stage4Badge').textContent = `${s4}/3 Terverifikasi`;
+            document.getElementById('stage4Badge').className = `text-xs font-mono font-bold ${s4 === 3 ? 'text-emerald-400' : 'text-slate-400'}`;
+
+            const pct = Math.round((totalChecked / totalBoxes) * 100);
+            const topScoreText = document.getElementById('topScoreText');
+            const topProgressBar = document.getElementById('topProgressBar');
+            topScoreText.textContent = `${totalChecked} / ${totalBoxes}`;
+
+            const verdictBox = document.getElementById('masterVerdictBox');
+            const verdictDot = document.getElementById('verdictDot');
+            const verdictLabel = document.getElementById('verdictLabel');
+            const verdictTitle = document.getElementById('verdictTitle');
+            const verdictSubtext = document.getElementById('verdictSubtext');
+            const verdictPill = document.getElementById('verdictPill');
+            const verdictEvText = document.getElementById('verdictEvText');
+            const btnLog = document.getElementById('btnLogTrade');
+
+            const grossEv = (0.8571 * currentAllowedRiskUsd) - (0.1429 * currentAllowedRiskUsd);
+            const net80Ev = grossEv * 0.80;
+            verdictEvText.textContent = currentAllowedRiskUsd > 0
+                ? `EV Setup LS (Risk $${currentAllowedRiskUsd}): +$${grossEv.toFixed(2)} Kotor | +$${net80Ev.toFixed(2)} Hak 80% | Lot: ${currentCalculatedLot.toFixed(2)}`
+                : `Mode Lockout Aktif — Lindungi Lantai Static DD $${staticFloor.toLocaleString('en-US')}`;
+
+            const isCleanAndComplete = (violations.length === 0) && (totalChecked === totalBoxes);
+
+            if (isCleanAndComplete) {
+                topScoreText.className = 'text-xs sm:text-sm font-mono font-extrabold text-emerald-400';
+                topProgressBar.className = 'h-full bg-emerald-400 transition-all duration-300';
+                topProgressBar.style.width = '100%';
+
+                verdictBox.className = 'p-6 rounded-2xl bg-emerald-950/35 border-2 border-emerald-400/70 transition-all duration-300 shadow-lg shadow-emerald-500/15';
+                verdictDot.className = 'w-3 h-3 rounded-full bg-emerald-400 animate-ping';
+                verdictLabel.className = 'text-xs font-mono uppercase tracking-wider font-extrabold text-emerald-400';
+                verdictLabel.textContent = `VERIFIKASI AKUN FUNDED ${sizeK} LULUS • ZERO VIOLATION`;
+                verdictTitle.textContent = `CLEAR TO EXECUTE — ENTRY TUNGGAL ${currentCalculatedLot.toFixed(2)} LOT`;
+                verdictSubtext.textContent = `Bebas penalti News 40%, di bawah Max Risk 3% ($${maxRiskUsd}), konfirmasi LS valid & jurnal terisi. Eksekusi dengan disiplin!`;
+                verdictPill.className = 'px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-emerald-500 text-slate-950 border border-emerald-300 tracking-tight shadow-md';
+                verdictPill.textContent = 'EXECUTE (12/12)';
+
+                btnLog.disabled = false;
+                btnLog.className = 'px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition cursor-pointer shadow';
+            } else {
+                topScoreText.className = violations.length > 0 ? 'text-xs sm:text-sm font-mono font-extrabold text-rose-400' : 'text-xs sm:text-sm font-mono font-extrabold text-amber-400';
+                topProgressBar.className = violations.length > 0 ? 'h-full bg-rose-500 transition-all duration-300' : 'h-full bg-amber-400 transition-all duration-300';
+                topProgressBar.style.width = `${pct}%`;
+
+                verdictBox.className = 'p-6 rounded-2xl bg-rose-950/35 border-2 border-rose-500/50 transition-all duration-300';
+                verdictDot.className = 'w-3 h-3 rounded-full bg-rose-500 animate-pulse';
+                verdictLabel.className = 'text-xs font-mono uppercase tracking-wider font-extrabold text-rose-400';
+
+                if (violations.length > 0) {
+                    verdictLabel.textContent = `DIBLOKIR OLEH FILTER AKUN FUNDED (${violations.length} PELANGGARAN)`;
+                    verdictTitle.textContent = 'HARD BANNED — TUTUP CHART / DILARANG ENTRY!';
+                    verdictSubtext.textContent = 'Kondisi saat ini melanggar Hard Banned List atau aturan penalti FundedNext (News 40% / Daily Cap / Lockout).';
+                    verdictPill.textContent = 'BANNED SETUP';
+                } else {
+                    verdictLabel.textContent = 'KEPUTUSAN PROTOKOL AKUN FUNDED';
+                    verdictTitle.textContent = 'DILARANG KLIK ORDER — SYARAT BELUM LENGKAP';
+                    verdictSubtext.textContent = `Anda baru memverifikasi ${totalChecked} dari 12 poin wajib. Pastikan seluruh gerbang & catatan jurnal di SOP 8 telah selesai.`;
+                    verdictPill.textContent = `NO TRADE (${totalChecked}/12)`;
+                }
+
+                verdictPill.className = 'px-5 py-3 rounded-2xl font-mono font-extrabold text-base sm:text-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 tracking-tight';
+                btnLog.disabled = true;
+                btnLog.className = 'px-4 py-2 rounded-xl bg-emerald-600/30 text-emerald-300/50 border border-emerald-500/20 text-xs font-bold transition cursor-not-allowed';
+            }
+        }
+
+        function copyJournalNote() {
+            const input = document.getElementById('journalThesisInput');
+            const copyText = document.getElementById('copyBtnText');
+            if (!input.value.trim()) {
+                fillTemplateThesis();
+            }
+            input.select();
+            input.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                copyText.textContent = '✓ Tersalin!';
+                setTimeout(() => { copyText.textContent = 'Salin Catatan Note'; }, 2000);
+            } catch (e) {
+                copyText.textContent = 'Gagal Salin';
+            }
+        }
+
+        function copySheetRowTsv() {
+            const session = document.getElementById('paramSession').value;
+            const alignRaw = document.getElementById('paramAlignment').value;
+            const [cond, entry] = alignRaw.split('_');
+            const score = parseInt(document.getElementById('paramScore').value, 10);
+            const geoRaw = document.getElementById('paramGeo').value;
+            const geo = geoRaw === 'NEWS_WAIT' || geoRaw === 'NEWS_NOW' ? 'NEWS' : geoRaw;
+            const tech = document.getElementById('paramTech').value;
+            const outcome = document.getElementById('defaultOutcomeSelect') ? document.getElementById('defaultOutcomeSelect').value : 'OPEN';
+            const winVal = outcome === 'TP' ? '1' : (outcome === 'SL' ? '0' : '');
+            const dateIso = new Date().toISOString().split('T')[0];
+
+            const sellScore = entry === 'Sell' ? score : 0;
+            const buyScore = entry === 'Buy' ? score : 0;
+
+            const tsvRow = `47\t${dateIso}\t${session}\tXAU/USD\t${cond}\t${entry}\t${sellScore}\t${buyScore}\t${geo}\t${tech}\t${outcome}\t${winVal}`;
+            const temp = document.createElement('textarea');
+            temp.value = tsvRow;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+
+            const btn = document.getElementById('copyRowBtnText');
+            btn.textContent = '✓ Baris Tersalin! (Ctrl+V di Sheet)';
+            setTimeout(() => { btn.textContent = 'Salin Baris Data Trading'; }, 2500);
+        }
+
+        async function logVerifiedTrade() {
+            const sizeK = `$${currentAccountSize / 1000}K`;
+            const payoutCycle = document.getElementById('payoutCycleSelect').value;
+            const session = document.getElementById('paramSession').value;
+            const alignRaw = document.getElementById('paramAlignment').value;
+            const [cond, entry] = alignRaw.split('_');
+            const align = `${cond} + ${entry}`;
+            const score = parseInt(document.getElementById('paramScore').value, 10);
+            const geoRaw = document.getElementById('paramGeo').value;
+            const geo = geoRaw === 'NEWS_WAIT' || geoRaw === 'NEWS_NOW' ? 'NEWS' : geoRaw;
+            const tech = document.getElementById('paramTech').value;
+            const riskInfo = `Risk $${currentAllowedRiskUsd} • ${currentCalculatedLot.toFixed(2)} Lot (${sizeK} ${payoutCycle})`;
+            const thesis = document.getElementById('journalThesisInput').value.trim();
+            const outcome = document.getElementById('defaultOutcomeSelect') ? document.getElementById('defaultOutcomeSelect').value : 'OPEN';
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            const dateIso = now.toISOString().split('T')[0];
+
+            const btnLog = document.getElementById('btnLogTrade');
+            const originalText = btnLog.textContent;
+            const webhookUrl = localStorage.getItem('xau_sheets_webhook_url') || '';
+
+            let syncStatus = 'Lokal';
+            if (webhookUrl) {
+                btnLog.textContent = 'Mengirim ke Google Sheets...';
+                btnLog.disabled = true;
+                try {
+                    const payload = {
+                        date: dateIso,
+                        session: session,
+                        cond: cond,
+                        entry: entry,
+                        sellScore: entry === 'Sell' ? score : 0,
+                        buyScore: entry === 'Buy' ? score : 0,
+                        geo: geo,
+                        tech: tech,
+                        outcome: outcome,
+                        thesis: thesis
+                    };
+                    await fetch(webhookUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    syncStatus = '✓ Terkirim ke Google Sheets';
+                } catch (err) {
+                    syncStatus = '⚠ Gagal Sync (Tersimpan Lokal)';
+                }
+                btnLog.disabled = false;
+                btnLog.textContent = '✓ Tersimpan!';
+                setTimeout(() => { btnLog.textContent = originalText; }, 2200);
+            }
+
+            const logs = JSON.parse(localStorage.getItem('xau_preflight_logs') || '[]');
+            logs.unshift({
+                time: timeStr,
+                setup: `${align} | Skor ${score} | ${tech}`,
+                risk: riskInfo,
+                thesis: thesis,
+                sync: syncStatus
+            });
+            localStorage.setItem('xau_preflight_logs', JSON.stringify(logs.slice(0, 15)));
+            renderSessionLogs();
+        }
+
+        function toggleSheetsModal() {
+            const modal = document.getElementById('sheetsConfigModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function saveWebhookUrl() {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            const feedback = document.getElementById('webhookSaveFeedback');
+            const dot = document.getElementById('sheetsStatusDot');
+            const label = document.getElementById('sheetsBtnLabel');
+
+            if (url && url.startsWith('https://script.google.com/')) {
+                localStorage.setItem('xau_sheets_webhook_url', url);
+                feedback.textContent = '✓ Terhubung! Setiap klik Simpan akan otomatis mengisi Data Trading & Note.';
+                feedback.className = 'text-[11px] font-mono text-emerald-400';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                label.textContent = 'Sheets Terhubung';
+            } else {
+                localStorage.removeItem('xau_sheets_webhook_url');
+                feedback.textContent = 'URL dikosongkan / belum valid. Mode penyimpanan lokal aktif.';
+                feedback.className = 'text-[11px] font-mono text-amber-400';
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                label.textContent = 'Hubungkan Google Sheets';
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const box = document.getElementById('appsScriptCodeBox');
+            const btnText = document.getElementById('copyScriptBtnText');
+            box.select();
+            box.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                btnText.textContent = '✓ Kode Apps Script Tersalin!';
+                setTimeout(() => { btnText.textContent = 'Salin Kode Apps Script'; }, 2200);
+            } catch (e) {
+                btnText.textContent = 'Gagal Menyalin';
+            }
+        }
+
+        function renderSessionLogs() {
+            const container = document.getElementById('sessionLogContainer');
+            const logs = JSON.parse(localStorage.getItem('xau_preflight_logs') || '[]');
+
+            if (logs.length === 0) {
+                container.innerHTML = `<div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 text-slate-400 text-center">Belum ada transaksi Akun Funded yang diverifikasi pada sesi ini.</div>`;
+                return;
+            }
+
+            container.innerHTML = logs.map((item, idx) => `
+                <div class="p-3.5 rounded-xl bg-slate-900/85 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px]">FUNDED #${logs.length - idx}</span>
+                            <span class="font-mono font-bold text-white">${item.setup}</span>
+                            <span class="text-slate-400 font-mono text-[11px]">• ${item.time}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-[10px]">${item.sync || 'Lokal'}</span>
+                        </div>
+                        <p class="text-slate-300 text-xs">${item.thesis}</p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 font-mono text-[11px] text-amber-400 shrink-0 self-start sm:self-center">
+                        ${item.risk}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function clearSessionLogs() {
+            localStorage.removeItem('xau_preflight_logs');
+            renderSessionLogs();
+        }
+
+        function resetAllProtocol() {
+            document.querySelectorAll('.pf-check').forEach(chk => chk.checked = false);
+            document.getElementById('riskModeSelect').value = 'shield08';
+            document.getElementById('dailyStatusSelect').value = 'trade1';
+            document.getElementById('streakStatusSelect').value = 'normal';
+            document.getElementById('paramSession').value = 'New York';
+            document.getElementById('paramAlignment').value = 'Bull_Buy';
+            document.getElementById('paramScore').value = '2';
+            document.getElementById('paramGeo').value = 'Nothing';
+            document.getElementById('paramTech').value = 'LS';
+            document.getElementById('slDistanceInput').value = '6';
+            document.getElementById('journalThesisInput').value = '';
+            handleThesisInput();
+            evaluateProtocol();
+        }
+
+        window.onload = function () {
+            const savedUrl = localStorage.getItem('xau_sheets_webhook_url') || '';
+            if (savedUrl) {
+                document.getElementById('webhookUrlInput').value = savedUrl;
+                saveWebhookUrl();
+            }
+            evaluateProtocol();
+            renderSessionLogs();
+        };
+    </script>
+</body>
+</html>
